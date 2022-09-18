@@ -1,2 +1,21 @@
-# nonebot_plugin_bottle
-Bottle post plugin in Nonebot
+# Nonebot 漂流瓶插件
+* 安装
+    -
+    - 使用 `pip install nonebot_plugin_bottle`
+    - 使用 `nb plugin install nonebot_plugin_bottle`
+* 指令 (前应带指令前缀)
+    - 
+    - `扔漂流瓶 [文本/图片]`
+    - `捡漂流瓶` 
+    - `评论漂流瓶 [漂流瓶编号] [文本]`
+    - `举报漂流瓶 [漂流瓶编号]`
+    - `查看漂流瓶 [漂流瓶编号]`
+    - SUPERUSER指令：`清空漂流瓶`
+* 功能须知
+    -
+    - `扔漂流瓶`指令无字数限制，如需要可在代码中修改
+    - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复
+    - `评论漂流瓶`若机器人有被回复人好友，会发送被回复通知
+    - `举报漂流瓶`五次(默认)后将自动删除
+    - `清空漂流瓶`无确认过程，使用需谨慎
+    - `漂流瓶数据库`存放在`data/bottle/data.json`中
