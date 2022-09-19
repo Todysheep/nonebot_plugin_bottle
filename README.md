@@ -28,5 +28,5 @@
 * 效果展示
     -
     ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
-    ![image](https://user-images.githubusercontent.com/97968466/191050004-0c5579cf-2d45-4fc3-af62-04205261d1a2.png)  
+    ![image](https://user-images.githubusercontent.com/97968466/191052704-1b5ec89d-7a49-40d6-a5d9-b0a0171c730e.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)  
