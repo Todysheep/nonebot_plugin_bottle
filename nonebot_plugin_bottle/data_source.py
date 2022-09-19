@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 from nonebot.log import logger
 
-
 class Bottle(object):
     def __init__(self) -> None:
         self.data_path = Path("data/bottle/data.json").absolute()
@@ -19,14 +18,15 @@ class Bottle(object):
                 data: List[dict] = json.load(f)
             for i in data:
                 try:
-                    i['comment']
+                    i['picked']
                 except:
-                    i['comment'] = []
+                    i['picked'] = 0
                 self.__data.append({
                     "user": i["user"],
                     "group": i['group'],
                     "text": i['text'],
                     "report": i['report'],
+                    "picked": i['picked'],
                     "comment": i['comment']
                 })
         else:
@@ -70,6 +70,7 @@ class Bottle(object):
             'group': group,
             'text': text,
             'report': 0,
+            'picked': 0,
             'comment': []
         }
         if not self.check(temp):
@@ -97,6 +98,8 @@ class Bottle(object):
         '''
         if self.__data:
             index = random.randint(0, len(self.__data)-1)
+            self.__data[index]['picked'] += 1
+            self.__save()
             return [index, self.__data[index]]
         else:
             return []
@@ -180,12 +183,19 @@ class Bottle(object):
         `index`: 漂流瓶编号
         '''
         if 0<=index<len(self.__data):
-            return {"user": self.__data[index]["user"],
-                    "group": self.__data[index]['group'],
-                    "text": self.__data[index]['text'],
-                    "report": self.__data[index]['report'],
-                    "comment": self.__data[index]['comment']
-                    }
+            return self.__data[index]
         else:
             return {}
+
+    def remove(self,index:int):
+        '''
+        直接移除漂流瓶
+        `index`: 漂流瓶编号
+        '''
+        try:
+            del self.__data[index]
+            self.__save()
+            return True
+        except:
+            return False
 bottle = Bottle()

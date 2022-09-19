@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nonebot_plugin_bottle",
-    version="0.1.1",
+    version="0.1.2",
     author="Todysheep",
     author_email="todysheep@163.com",
     description="Bottle post plugin in Nonebot",

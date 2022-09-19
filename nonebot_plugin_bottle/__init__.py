@@ -12,6 +12,7 @@ comment = on_command("评论漂流瓶 ", priority=100, block=True)
 check_bottle = on_command("查看漂流瓶 ", priority=100, block=True)
 
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
+remove = on_command("删除漂流瓶 ",permission=SUPERUSER, priority=100, block=True)
 
 black_group = []
 
@@ -44,10 +45,10 @@ async def g(bot: Bot, event: GroupMessageEvent):
         user = await bot.get_group_member_info(group_id=data['group'], user_id=data['user'])
         group = await bot.get_group_info(group_id=data['group'])
         comment_list = bottle.check_comment(bott[0])
-        comment = ""
+        comment:str = ""
         for i in comment_list[-3:]:
             comment += i+"\n"
-        await get.finish(f'【第{bott[0]}号漂流瓶】捡到了来自【{group["group_name"]}】的 {user["nickname"]} 的漂流瓶！上边写着：\n'+Message(data['text']) + (f"\n+评论共 {len(comment_list)} 条：\n{comment}" if comment else ""))
+        await get.finish(f'【漂流瓶No.{bott[0]}|被捡到{data["picked"]}次】来自【{group["group_name"]}】的 {user["nickname"]} ！\n'+Message(data['text']) + (f"\n★评论共 {len(comment_list)} 条：\n{comment.strip()}" if comment else ""))
 
 
 @report.handle()
@@ -97,10 +98,18 @@ async def che(bot: Bot, event: MessageEvent):
     comment = ""
     for i in comment_list:
         comment += i+"\n"
-    await check_bottle.finish(f"来自【{group['group_name']}】的 {user['nickname']} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n{comment}")
+    await check_bottle.finish(f"来自【{group['group_name']}】的 {user['nickname']} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n{comment}\n【这个瓶子被捡到了{data['picked']}次！】")
 
 
 @clear.handle()
 async def cle(bot: Bot, event: MessageEvent):
     bottle.clear()
     await clear.finish("所有漂流瓶清空成功！")
+
+@remove.handle()
+async def rem(bot:Bot, event: GroupMessageEvent):
+    index = int(str(event.message).split()[1])
+    if bottle.remove(index):
+        await remove.finish(f"成功删除 {index} 号漂流瓶！")
+    else:
+        await remove.finish('删除失败！请检查编号')
