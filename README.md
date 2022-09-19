@@ -27,6 +27,6 @@
     - 第一次加载该插件时无法正常使用（重启后恢复）
 * 效果展示
     -
-    ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)
-    ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)
-    ![image](https://user-images.githubusercontent.com/97968466/191050004-0c5579cf-2d45-4fc3-af62-04205261d1a2.png)
+    ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
+    ![image](https://user-images.githubusercontent.com/97968466/191050004-0c5579cf-2d45-4fc3-af62-04205261d1a2.png)  
+    ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)  
