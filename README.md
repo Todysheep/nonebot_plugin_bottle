@@ -1,40 +1,41 @@
-# Nonebot Ư��ƿ���
-* ��װ
+# Nonebot 漂流瓶插件
+* 安装
     -
-    - ʹ�� `pip install nonebot_plugin_bottle`
-    - ʹ�� `nb plugin install nonebot_plugin_bottle`
-* ָ�� (ǰӦ��ָ��ǰ׺)
+    - 使用 `pip install nonebot_plugin_bottle`
+    - 使用 `nb plugin install nonebot_plugin_bottle`
+* 指令 (前应带指令前缀)
     - 
-    - `��Ư��ƿ` [�ı�/ͼƬ]
-    - `��Ư��ƿ` [�ı�/ͼƬ] ��ͬ`��Ư��ƿ`����ָֹ���ͻ�ã�
-    - `��Ư��ƿ` 
-    - `����Ư��ƿ` [Ư��ƿ���] [�ı�]
-    - `�ٱ�Ư��ƿ` [Ư��ƿ���]
-    - `�鿴Ư��ƿ` [Ư��ƿ���]
-    - SUPERUSERָ�
-        - `���Ư��ƿ`
-        - `ɾ��Ư��ƿ [Ư��ƿ���]`
-* ������֪
+    - `扔漂流瓶` [文本/图片]
+    - `寄漂流瓶` [文本/图片] （同`扔漂流瓶`，防止指令冲突用）
+    - `捡漂流瓶` 
+    - `评论漂流瓶` [漂流瓶编号] [文本]
+    - `举报漂流瓶` [漂流瓶编号]
+    - `查看漂流瓶` [漂流瓶编号]
+    - SUPERUSER指令：
+        - `清空漂流瓶`
+        - `删除漂流瓶 [漂流瓶编号]`
+* 功能须知
     -
-    - `��Ư��ƿ`ָ�����������ƣ�����Ҫ���ڴ������޸�
-    - `��Ư��ƿ`���񵽵�Ư��ƿ���ڻظ��������ʾ�������(Ĭ��)��ʹ��`�鿴Ư��ƿ`�鿴���лظ�
-    - `�鿴Ư��ƿ`Ϊ��֤����ԣ�������ʱ��չʾƯ��ƿ���ݣ����ڴ������޸�
-    - `����Ư��ƿ`���������б��ظ��˺��ѣ��ᷢ�ͱ��ظ�֪ͨ
-    - `�ٱ�Ư��ƿ`���(Ĭ��)���Զ�ɾ��
-    - `���Ư��ƿ`��ȷ�Ϲ��̣�ʹ�������
-    - `Ư��ƿ���ݿ�`�����`data/bottle/data.json`��
-    - `������Ⱥ��`����`__init__.py`ͬ��·��`config.py`������
-* �������API���ã���ѡ��
+    - `扔漂流瓶`指令无字数限制，如需要可在代码中修改
+    - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复
+    - `查看漂流瓶`为保证随机性，无评论时不展示漂流瓶内容，可在代码中修改
+    - `评论漂流瓶`若机器人有被回复人好友，会发送被回复通知
+    - `举报漂流瓶`五次(默认)后将自动删除
+    - `清空漂流瓶`无确认过程，使用需谨慎
+    - `漂流瓶数据库`存放在`data/bottle/data.json`中
+    - `黑名单群组`可在`__init__.py`同级路径`config.py`中添加
+* 文字审核API配置（可选）
     - 
-    - ��[�ٶ�������](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)������`API_KEY`��`secret_key`
-    - ��`config.py`�����뼴��
-    - �����ø����򲻽�����˲���
+    - 在[百度智能云](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)中申请`API_KEY`和`secret_key`
+    - 在`config.py`中填入即可
+    - 不配置该项则不进行审核操作
 
-* ��֪bug
+* 已知bug
     -
-    - ��һ�μ��ظò��ʱ�޷�����ʹ�ã�������ָ���
-* Ч��չʾ
+    - 第一次加载该插件时无法正常使用（重启后恢复）
+* 效果展示
     -
     ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191052704-1b5ec89d-7a49-40d6-a5d9-b0a0171c730e.png)  
+    ![image](https://user-images.githubusercontent.com/97968466/191250967-b702cf6e-c0c8-48b6-8ecb-68108bfc6eab.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)  
