@@ -21,7 +21,7 @@ async def thr(bot: Bot, event: GroupMessageEvent):
     if event.group_id in black_group:
         await throw.finish()
 
-    message = str(event.message).replace("/扔漂流瓶 ", "")
+    message = str(event.message).split(maxsplit=1)[1]
     if not message:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
     if bottle.add(user=event.user_id, group=event.group_id, text=message):
@@ -48,7 +48,7 @@ async def g(bot: Bot, event: GroupMessageEvent):
         comment:str = ""
         for i in comment_list[-3:]:
             comment += i+"\n"
-        await get.finish(f'【漂流瓶No.{bott[0]}|被捡到{data["picked"]}次】来自【{group["group_name"]}】的 {user["nickname"]} ！\n'+Message(data['text']) + (f"\n★评论共 {len(comment_list)} 条：\n{comment.strip()}" if comment else ""))
+        await get.finish(f'【漂流瓶No.{bott[0]}|被捡到{data["picked"]}次】来自【{group["group_name"]}】的 {user["nickname"]} ！\n'+Message(data['text']) + (f"\n★评论共 {len(comment_list)} 条★\n{comment.strip()}" if comment else ""))
 
 
 @report.handle()
@@ -56,7 +56,7 @@ async def rep(bot: Bot, event: GroupMessageEvent):
     if event.group_id in black_group:
         await report.finish()
 
-    index = int(str(event.message).replace("/举报漂流瓶 ", ""))
+    index = int(str(event.message).split(maxsplit=1)[1])
     result = bottle.report(index)
     if result == 0:
         await report.finish("举报失败！请检查编号")
@@ -71,10 +71,10 @@ async def com(bot: Bot, event: GroupMessageEvent):
     if event.group_id in black_group:
         await comment.finish()
 
-    mes = str(event.message).replace("/评论漂流瓶 ", "").split()
-    index = int(mes[0])
+    mes = str(event.message).split(maxsplit=2)
+    index = int(mes[1])
     user = await bot.get_group_member_info(group_id=event.group_id, user_id=event.user_id)
-    commen = f"{user['nickname']}：{mes[1]}"
+    commen = f"{user['nickname']}：{mes[2]}"
     bottle.comment(index, commen)
     try:
         await bot.send_msg(user_id=bottle.check_bottle(index)['user'], message=f"你的{index}号漂流瓶被评论啦！\n{commen}")
@@ -88,7 +88,7 @@ async def che(bot: Bot, event: MessageEvent):
     if event.group_id in black_group:
         await check_bottle.finish()
 
-    index = int(str(event.message).replace("/查看漂流瓶 ", ""))
+    index = int(str(event.message).split(maxsplit=1)[1])
     comment_list = bottle.check_comment(index)
     data = bottle.check_bottle(index)
     user = await bot.get_group_member_info(group_id=data['group'], user_id=data['user'])
@@ -98,7 +98,7 @@ async def che(bot: Bot, event: MessageEvent):
     comment = ""
     for i in comment_list:
         comment += i+"\n"
-    await check_bottle.finish(f"来自【{group['group_name']}】的 {user['nickname']} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n{comment}\n【这个瓶子被捡到了{data['picked']}次！】")
+    await check_bottle.finish(f"来自【{group['group_name']}】的 {user['nickname']} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n★评论共 {len(comment_list)} 条★\n{comment}【这个瓶子被捡到了{data['picked']}次！】")
 
 
 @clear.handle()
