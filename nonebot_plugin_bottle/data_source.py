@@ -1,8 +1,10 @@
 import json
 import random
+import requests 
 from pathlib import Path
 from typing import List
 from nonebot.log import logger
+from .config import api_key,secret_key
 
 class Bottle(object):
     def __init__(self) -> None:
@@ -21,14 +23,17 @@ class Bottle(object):
                     i['picked']
                 except:
                     i['picked'] = 0
-                self.__data.append({
-                    "user": i["user"],
-                    "group": i['group'],
-                    "text": i['text'],
-                    "report": i['report'],
-                    "picked": i['picked'],
-                    "comment": i['comment']
-                })
+                try:
+                    self.__data.append({
+                        "user": i["user"],
+                        "group": i['group'],
+                        "text": i['text'],
+                        "report": i['report'],
+                        "picked": i['picked'],
+                        "comment": i['comment']
+                    })
+                except:
+                    self.__data.append({})
         else:
             self.__data = 'E'
             with self.data_path.open('w+', encoding='utf-8') as f:
@@ -81,23 +86,15 @@ class Bottle(object):
             logger.warning("添加失败！")
             return False
 
-    def remove(self, index: int):
-        '''
-        移除列表内漂流瓶  
-        `index`: 漂流瓶编号
-        '''
-        try:
-            del self.__data[index]
-            self.__save()
-        except:
-            logger.warning('删除错误！')
-
     def select(self):
         '''
         抽取漂流瓶
         '''
         if self.__data:
             index = random.randint(0, len(self.__data)-1)
+            if not self.__data[index]:
+                self.select()
+                return
             self.__data[index]['picked'] += 1
             self.__save()
             return [index, self.__data[index]]
@@ -193,9 +190,39 @@ class Bottle(object):
         `index`: 漂流瓶编号
         '''
         try:
-            del self.__data[index]
+            self.__data[index] = {}
             self.__save()
             return True
         except:
+            logger.warning('删除错误！')
             return False
 bottle = Bottle()
+
+def text_audit(text:str,ak = api_key,sk = secret_key):
+    '''
+    文本审核(百度智能云)  
+    `text`: 待审核文本
+    `ak`: api_key
+    `sk`: secret_key
+    '''
+    if (not api_key) or (not secret_key):
+        #未配置key 直接通过审核
+        return 'pass'
+    # access_token 获取
+    host = f'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}'
+    response = requests.get(host)
+    if response:
+        access_token = response.json()['access_token']
+    else:
+        return True
+    
+    request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
+    params = {"text":text}
+    request_url = request_url + "?access_token=" + access_token
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    response = requests.post(request_url, data=params, headers=headers)
+    if response:
+        return response.json()
+    else:
+        # 调用审核API失败
+        return 'Error'

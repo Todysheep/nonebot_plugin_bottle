@@ -3,9 +3,10 @@ import random
 from nonebot import on_command
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GROUP, Message
-from .data_source import bottle
+from .data_source import bottle,text_audit
+from .config import black_group
 
-throw = on_command("扔漂流瓶 ", permission=GROUP, priority=100, block=True)
+throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 "]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶 ", priority=100, block=True)
 comment = on_command("评论漂流瓶 ", priority=100, block=True)
@@ -14,7 +15,6 @@ check_bottle = on_command("查看漂流瓶 ", priority=100, block=True)
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
 remove = on_command("删除漂流瓶 ",permission=SUPERUSER, priority=100, block=True)
 
-black_group = []
 
 @throw.handle()
 async def thr(bot: Bot, event: GroupMessageEvent):
@@ -22,15 +22,24 @@ async def thr(bot: Bot, event: GroupMessageEvent):
         await throw.finish()
 
     message = str(event.message).split(maxsplit=1)[1]
-    if not message:
+    message_text = str(event.message.extract_plain_text())[1] or ""
+    try:
+        message[1]
+    except:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
+
+    audit = text_audit(text=message_text)
+    if not audit == 'pass':
+        if audit == 'Error': 
+            await throw.finish("文字审核未通过！原因：调用审核API失败" )
+        elif audit['conclusion'] == '不合规':
+            await throw.finish("文字审核未通过！原因：" + audit['data'][0]['msg'])
     if bottle.add(user=event.user_id, group=event.group_id, text=message):
         await asyncio.sleep(2)
         await throw.finish(f'你将一个漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢...')
     else:
         await asyncio.sleep(2)
         await throw.finish("你的瓶子以奇怪的方式消失掉了！")
-
 
 @get.handle()
 async def g(bot: Bot, event: GroupMessageEvent):
@@ -71,10 +80,16 @@ async def com(bot: Bot, event: GroupMessageEvent):
     if event.group_id in black_group:
         await comment.finish()
 
-    mes = str(event.message).split(maxsplit=2)
+    mes = str(event.message.extract_plain_text()).split(maxsplit=2)
     index = int(mes[1])
+    data = bottle.check_bottle(index)
+    if not data:
+        await check_bottle.finish("该漂流瓶不存在或已被删除！")
     user = await bot.get_group_member_info(group_id=event.group_id, user_id=event.user_id)
-    commen = f"{user['nickname']}：{mes[2]}"
+    try:
+        commen = f"{user['nickname']}：{mes[2]}"
+    except:
+        await comment.finish("想评论什么呀，在后边写上吧！")
     bottle.comment(index, commen)
     try:
         await bot.send_msg(user_id=bottle.check_bottle(index)['user'], message=f"你的{index}号漂流瓶被评论啦！\n{commen}")
@@ -85,14 +100,15 @@ async def com(bot: Bot, event: GroupMessageEvent):
 
 @check_bottle.handle()
 async def che(bot: Bot, event: MessageEvent):
-    if event.group_id in black_group:
-        await check_bottle.finish()
 
     index = int(str(event.message).split(maxsplit=1)[1])
     comment_list = bottle.check_comment(index)
     data = bottle.check_bottle(index)
-    user = await bot.get_group_member_info(group_id=data['group'], user_id=data['user'])
-    group = await bot.get_group_info(group_id=data['group'])
+    try:
+        user = await bot.get_group_member_info(group_id=data['group'], user_id=data['user'])
+        group = await bot.get_group_info(group_id=data['group'])
+    except:
+        await check_bottle.finish("该漂流瓶不存在或已被删除！")
     if not comment_list:
         await check_bottle.finish("这个编号的漂流瓶还没有评论哦！")
     comment = ""

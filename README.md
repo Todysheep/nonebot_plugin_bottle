@@ -1,31 +1,39 @@
-# Nonebot 漂流瓶插件
-* 安装
+# Nonebot Ư��ƿ���
+* ��װ
     -
-    - 使用 `pip install nonebot_plugin_bottle`
-    - 使用 `nb plugin install nonebot_plugin_bottle`
-* 指令 (前应带指令前缀)
+    - ʹ�� `pip install nonebot_plugin_bottle`
+    - ʹ�� `nb plugin install nonebot_plugin_bottle`
+* ָ�� (ǰӦ��ָ��ǰ׺)
     - 
-    - `扔漂流瓶` [文本/图片]
-    - `捡漂流瓶` 
-    - `评论漂流瓶` [漂流瓶编号] [文本]
-    - `举报漂流瓶` [漂流瓶编号]
-    - `查看漂流瓶` [漂流瓶编号]
-    - SUPERUSER指令：
-        - `清空漂流瓶`
-        - `删除漂流瓶 [漂流瓶编号]`
-* 功能须知
+    - `��Ư��ƿ` [�ı�/ͼƬ]
+    - `��Ư��ƿ` [�ı�/ͼƬ] ��ͬ`��Ư��ƿ`����ָֹ���ͻ�ã�
+    - `��Ư��ƿ` 
+    - `����Ư��ƿ` [Ư��ƿ���] [�ı�]
+    - `�ٱ�Ư��ƿ` [Ư��ƿ���]
+    - `�鿴Ư��ƿ` [Ư��ƿ���]
+    - SUPERUSERָ�
+        - `���Ư��ƿ`
+        - `ɾ��Ư��ƿ [Ư��ƿ���]`
+* ������֪
     -
-    - `扔漂流瓶`指令无字数限制，如需要可在代码中修改
-    - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复
-    - `查看漂流瓶`为保证随机性，无评论时不展示漂流瓶内容，可在代码中修改
-    - `评论漂流瓶`若机器人有被回复人好友，会发送被回复通知
-    - `举报漂流瓶`五次(默认)后将自动删除
-    - `清空漂流瓶`无确认过程，使用需谨慎
-    - `漂流瓶数据库`存放在`data/bottle/data.json`中
-* 已知bug
+    - `��Ư��ƿ`ָ�����������ƣ�����Ҫ���ڴ������޸�
+    - `��Ư��ƿ`���񵽵�Ư��ƿ���ڻظ��������ʾ�������(Ĭ��)��ʹ��`�鿴Ư��ƿ`�鿴���лظ�
+    - `�鿴Ư��ƿ`Ϊ��֤����ԣ�������ʱ��չʾƯ��ƿ���ݣ����ڴ������޸�
+    - `����Ư��ƿ`���������б��ظ��˺��ѣ��ᷢ�ͱ��ظ�֪ͨ
+    - `�ٱ�Ư��ƿ`���(Ĭ��)���Զ�ɾ��
+    - `���Ư��ƿ`��ȷ�Ϲ��̣�ʹ�������
+    - `Ư��ƿ���ݿ�`�����`data/bottle/data.json`��
+    - `������Ⱥ��`����`__init__.py`ͬ��·��`config.py`������
+* �������API���ã���ѡ��
+    - 
+    - ��[�ٶ�������](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)������`API_KEY`��`secret_key`
+    - ��`config.py`�����뼴��
+    - �����ø����򲻽�����˲���
+
+* ��֪bug
     -
-    - 第一次加载该插件时无法正常使用（重启后恢复）
-* 效果展示
+    - ��һ�μ��ظò��ʱ�޷�����ʹ�ã�������ָ���
+* Ч��չʾ
     -
     ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191052704-1b5ec89d-7a49-40d6-a5d9-b0a0171c730e.png)  
