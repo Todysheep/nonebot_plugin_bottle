@@ -92,10 +92,10 @@ async def com(bot: Bot, event: GroupMessageEvent):
         await comment.finish("想评论什么呀，在后边写上吧！")
     bottle.comment(index, commen)
     try:
-        await bot.send_msg(user_id=bottle.check_bottle(index)['user'], message=f"你的{index}号漂流瓶被评论啦！\n{commen}")
+        await bot.send_msg(group_id=bottle.check_bottle(index)['group'], message=Message(f"[CQ:at,qq={bottle.check_bottle(index)['user']}] 你的{index}号漂流瓶被评论啦！\n{commen}"))
         await asyncio.sleep(2)
     finally:
-        await comment.finish("回复成功！如果这个瓶子的主人是我好友的话我会通知ta的！")
+        await comment.finish("回复成功！")
 
 
 @check_bottle.handle()
