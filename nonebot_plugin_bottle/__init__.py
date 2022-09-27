@@ -21,15 +21,15 @@ remove = on_command("删除漂流瓶 ", permission=SUPERUSER, priority=100, bloc
 async def thr(bot: Bot, event: GroupMessageEvent):
     if event.group_id in black_group:
         await throw.finish()
-
     message = str(event.message).split(maxsplit=1)[1]
     message_text = str(event.message.extract_plain_text())[1] or ""
     try:
         message[1]
     except:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
-
-    audit = text_audit(text=message_text)
+    mes = str(event.message.extract_plain_text()).split(maxsplit=1)
+    index = mes[1]
+    audit = text_audit(text=index)
     if not audit == 'pass':
         if audit == 'Error':
             await throw.finish("文字审核未通过！原因：调用审核API失败")
@@ -107,6 +107,12 @@ async def com(bot: Bot, event: GroupMessageEvent):
     if not data or data['del']:
         await check_bottle.finish("该漂流瓶不存在或已被删除！")
     user = await bot.get_group_member_info(group_id=event.group_id, user_id=event.user_id)
+    audit = text_audit(text=mes[2])
+    if not audit == 'pass':
+        if audit == 'Error':
+            await throw.finish("文字审核未通过！原因：调用审核API失败")
+        elif audit['conclusion'] == '不合规':
+            await throw.finish("文字审核未通过！原因：" + audit['data'][0]['msg'])
     try:
         commen = f"{user['nickname']}：{mes[2]}"
     except:
