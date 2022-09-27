@@ -1,11 +1,12 @@
 import json
 import random
-import requests 
+import requests
 from pathlib import Path
 from typing import List
 from nonebot.log import logger
 from nonebot.adapters.onebot.v11 import Bot
-from .config import api_key,secret_key
+from .config import api_key, secret_key
+
 
 class Bottle(object):
     def __init__(self) -> None:
@@ -20,7 +21,7 @@ class Bottle(object):
             with self.data_path.open("r", encoding="utf-8") as f:
                 data: List[dict] = json.load(f)
             for i in data:
-                #旧版json兼容
+                # 旧版json兼容
                 if not i:
                     self.__data.append({
                         'del': 1
@@ -42,6 +43,7 @@ class Bottle(object):
                 try:
                     self.__data.append({
                         'del': i['del'],
+                        'bot': i['bot'],
                         "user": i["user"],
                         "group": i['group'],
                         "user_name": i['user_name'],
@@ -82,7 +84,7 @@ class Bottle(object):
                 return True
         return False
 
-    def add(self,bot:Bot, user: str, group: str, text,user_name,group_name) -> bool:
+    def add(self, bot: Bot, user: str, group: str, text, user_name, group_name) -> bool:
         '''
         新增一个漂流瓶  
         `user`: 用户QQ  
@@ -90,6 +92,7 @@ class Bottle(object):
         `text`: 漂流瓶内容
         '''
         temp = {
+            'bot': bot,
             'user': user,
             'group': group,
             'user_name': user_name,
@@ -113,7 +116,7 @@ class Bottle(object):
         抽取漂流瓶
         '''
         if self.__data:
-            index = random.randint(0, len(self.__data)-1)
+            index = random.randint(0, len(self.__data) - 1)
             if not self.__data[index]:
                 self.select()
                 return
@@ -142,7 +145,7 @@ class Bottle(object):
         2 举报成功并且已经自动处理
         3 已经删除
         '''
-        if index > len(self.__data)-1 or index < 0:
+        if index > len(self.__data) - 1 or index < 0:
             return 0
         try:
             self.__data[index]['report'] += 1
@@ -200,17 +203,17 @@ class Bottle(object):
                 pass
             return []
 
-    def check_bottle(self,index:int):
+    def check_bottle(self, index: int):
         '''
         获取漂流瓶信息
         `index`: 漂流瓶编号
         '''
-        if 0<=index<len(self.__data):
+        if 0 <= index < len(self.__data):
             return self.__data[index]
         else:
             return {}
 
-    def remove(self,index:int):
+    def remove(self, index: int):
         '''
         直接移除漂流瓶
         `index`: 漂流瓶编号
@@ -222,9 +225,12 @@ class Bottle(object):
         except:
             logger.warning('删除错误！')
             return False
+
+
 bottle = Bottle()
 
-def text_audit(text:str,ak = api_key,sk = secret_key):
+
+def text_audit(text: str, ak=api_key, sk=secret_key):
     '''
     文本审核(百度智能云)  
     `text`: 待审核文本
@@ -232,7 +238,7 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
     `sk`: secret_key
     '''
     if (not api_key) or (not secret_key):
-        #未配置key 直接通过审核
+        # 未配置key 直接通过审核
         return 'pass'
     # access_token 获取
     host = f'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}'
@@ -241,9 +247,9 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
         access_token = response.json()['access_token']
     else:
         return True
-    
+
     request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
-    params = {"text":text}
+    params = {"text": text}
     request_url = request_url + "?access_token=" + access_token
     headers = {'content-type': 'application/x-www-form-urlencoded'}
     response = requests.post(request_url, data=params, headers=headers)
