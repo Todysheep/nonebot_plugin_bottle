@@ -4,6 +4,7 @@ import requests
 from pathlib import Path
 from typing import List
 from nonebot.log import logger
+from nonebot.adapters.onebot.v11 import Bot
 from .config import api_key,secret_key
 
 class Bottle(object):
@@ -19,14 +20,32 @@ class Bottle(object):
             with self.data_path.open("r", encoding="utf-8") as f:
                 data: List[dict] = json.load(f)
             for i in data:
+                #旧版json兼容
+                if not i:
+                    self.__data.append({
+                        'del': 1
+                    })
+                    continue
                 try:
-                    i['picked']
+                    i['del']
                 except:
-                    i['picked'] = 0
+                    i['del'] = 0
+                try:
+                    i['group_name']
+                except:
+                    i['group_name'] = i['group']
+                try:
+                    i['user_name']
+                except:
+                    i['user_name'] = i['user']
+
                 try:
                     self.__data.append({
+                        'del': i['del'],
                         "user": i["user"],
                         "group": i['group'],
+                        "user_name": i['user_name'],
+                        "group_name": i["group_name"],
                         "text": i['text'],
                         "report": i['report'],
                         "picked": i['picked'],
@@ -63,7 +82,7 @@ class Bottle(object):
                 return True
         return False
 
-    def add(self, user: str, group: str, text) -> bool:
+    def add(self,bot:Bot, user: str, group: str, text,user_name,group_name) -> bool:
         '''
         新增一个漂流瓶  
         `user`: 用户QQ  
@@ -73,9 +92,12 @@ class Bottle(object):
         temp = {
             'user': user,
             'group': group,
+            'user_name': user_name,
+            'group_name': group_name,
             'text': text,
             'report': 0,
             'picked': 0,
+            'del': 0,
             'comment': []
         }
         if not self.check(temp):
@@ -118,6 +140,7 @@ class Bottle(object):
         0 举报失败
         1 举报成功
         2 举报成功并且已经自动处理
+        3 已经删除
         '''
         if index > len(self.__data)-1 or index < 0:
             return 0
@@ -126,9 +149,12 @@ class Bottle(object):
         except:
             self.__data[index]['report'] = 1
 
+        if self.__data[index]['del'] == 1:
+            return 3
+
         if self.__data[index]['report'] >= timesMax:
             try:
-                del self.__data[index]
+                self.remove(index)
                 self.__save()
                 return 2
             except:
@@ -190,7 +216,7 @@ class Bottle(object):
         `index`: 漂流瓶编号
         '''
         try:
-            self.__data[index] = {}
+            self.__data[index]['del'] = 1
             self.__save()
             return True
         except:
