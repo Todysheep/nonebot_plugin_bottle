@@ -32,6 +32,15 @@
 * 已知bug
     -
     - 第一次加载该插件时无法正常使用（重启后恢复）
+
+* 更新日志
+    -
+    - 0.1.7
+        - 新增json项`key`，将不使用`del`删除漂流瓶，而保留原漂流瓶数据便于管理者查看
+        - 新增json项`group_name`,`username`，将在API无法获取信息时使用
+    - 0.1.6
+        - 新增配置项`api_key`,'secret_key'，用于文本审核
+        - 新增配置项`black_group`，用于屏蔽特定群聊
 * 效果展示
     -
     ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
