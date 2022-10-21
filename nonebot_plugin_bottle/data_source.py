@@ -117,9 +117,8 @@ class Bottle(object):
         '''
         if self.__data:
             index = random.randint(0, len(self.__data) - 1)
-            if not self.__data[index]:
-                self.select()
-                return
+            if self.__data[index]['del']:
+                return self.select()
             self.__data[index]['picked'] += 1
             self.__save()
             return [index, self.__data[index]]
@@ -138,7 +137,6 @@ class Bottle(object):
         举报漂流瓶  
         `index`: 漂流瓶编号
         `timesMax`: 到达此数值自动处理
-
         返回  
         0 举报失败
         1 举报成功
