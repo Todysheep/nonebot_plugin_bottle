@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="nonebot_plugin_bottle",
-    version="0.1.7",
+    version="0.1.7.1",
     author="Todysheep",
     author_email="todysheep@163.com",
     description="Bottle post plugin in Nonebot",
@@ -16,7 +16,9 @@ setuptools.setup(
     install_requires=[
         'nonebot2>=2.0.0-beta.2',
         'nonebot-adapter-onebot>=2.0.0b1',
-        'nonebot-adapter-onebot',],
+        'nonebot-adapter-onebot',
+        'requests',
+        ],
     entry_points={},
     license='GNU GPLv3',
     classifiers=(
