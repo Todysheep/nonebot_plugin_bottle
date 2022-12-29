@@ -1,8 +1,7 @@
 # Nonebot 漂流瓶插件(多机器人版本)
 * 安装
     -
-    - 使用 `pip install nonebot_plugin_bottle`
-    - 使用 `nb plugin install nonebot_plugin_bottle`
+    - 使用 `pip install -v nonebot_plugin_bottle==0.1.7.1`
 * 指令 (前应带指令前缀)
     - 
     - `扔漂流瓶` [文本/图片]
