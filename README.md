@@ -1,4 +1,4 @@
-# Nonebot 漂流瓶插件
+# Nonebot 漂流瓶插件(多机器人版本)
 * 安装
     -
     - 使用 `pip install nonebot_plugin_bottle`
