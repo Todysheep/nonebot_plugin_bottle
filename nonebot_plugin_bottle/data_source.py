@@ -190,6 +190,17 @@ class Bottle(object):
                 pass
             return []
 
+    def remove_comment(self,index: int,user: int):
+        '''
+        删除指定漂流瓶里某人的所有评论
+        `index`: 漂流瓶编号  
+        `user`: QQ号  
+        '''
+        user = int(user)
+        self.__data[index]['comment'] = [i for i in self.__data[index]['comment'] if i[0] != user]
+        self.__save()
+        return True
+
     def check_bottle(self,index:int):
         '''
         获取漂流瓶信息

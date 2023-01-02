@@ -14,6 +14,7 @@ check_bottle = on_command("查看漂流瓶 ", priority=100, block=True)
 
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
 remove = on_command("删除漂流瓶 ",permission=SUPERUSER, priority=100, block=True)
+comrem = on_command("删除漂流瓶评论",permission=SUPERUSER, priority=100, block=True)
 listqq = on_command("漂流瓶详情",permission=SUPERUSER, priority=100, block=True)
 ban = on_command("漂流瓶黑名单",aliases=set(["banbottle",'漂流瓶封禁']),permission=SUPERUSER, priority=100, block=True)
 white = on_command("漂流瓶白名单",aliases=set(["whitebottle"]),permission=SUPERUSER, priority=100, block=True)
@@ -221,3 +222,12 @@ async def wh(bot:Bot, event: MessageEvent):
         else:
             ba.remove('whiteUser',command[1])
             await ban.finish(f"成功解封{command[0]}：{command[1]}")
+
+@comrem.handle()
+async def cr(bot:Bot,event: MessageEvent):
+    command = str(event.message).split(" ")[1:]
+    if bottle.remove_comment(int(command[0]),int(command[1])):
+        await comrem.finish("删除成功！")
+    else:
+        await comrem.finish("删除失败，请检查编号！")
+
