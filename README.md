@@ -19,6 +19,7 @@
         - `漂流瓶黑名单` [QQ / 群聊] [QQ号 / 群号]
         - `漂流瓶详情` [漂流瓶编号]
 * 功能须知
+    -
     - 所有用户：
         - `扔漂流瓶`指令无字数限制，如需要可在代码中修改
         - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复
@@ -36,7 +37,7 @@
     - 所有非SUPERUSER指令均受到权限控制
     - `冷却功能开关`：插件默认开启，可在`data/bottle/permissionsList.json`中修改`enableCooldown`bool值(True/False)
     - `功能冷却`：插件默认 30 秒冷却，可在`data/bottle/permissionsList.json`中修改`cooldownTime`int值  
-    - `被封禁/在CD时回复`：更改`data/bottle/permissionsList.json`中`bannedMessage`str值
+    - `被封禁/在CD时回复`：更改`data/bottle/permissionsList.json`中`bannedMessage`str值，为空则不回复
     - 白名单优先级高于黑名单和冷却名单
 
 * 文字审核API配置（可选）
