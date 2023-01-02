@@ -1,51 +1,67 @@
-# Nonebot æ¼‚æµç“¶æ’ä»¶
-* å®‰è£…
+# Nonebot Æ¯Á÷Æ¿²å¼þ
+* °²×°
     -
-    - ä½¿ç”¨ `pip install nonebot_plugin_bottle`
-    - ä½¿ç”¨ `nb plugin install nonebot_plugin_bottle`
-* æŒ‡ä»¤ (å‰åº”å¸¦æŒ‡ä»¤å‰ç¼€)
+    - Ê¹ÓÃ `pip install nonebot_plugin_bottle`
+    - Ê¹ÓÃ `nb plugin install nonebot_plugin_bottle`
+* Ö¸Áî (Ç°Ó¦´øÖ¸ÁîÇ°×º)
     - 
-    - `æ‰”æ¼‚æµç“¶` [æ–‡æœ¬/å›¾ç‰‡]
-    - `å¯„æ¼‚æµç“¶` [æ–‡æœ¬/å›¾ç‰‡] ï¼ˆåŒ`æ‰”æ¼‚æµç“¶`ï¼Œé˜²æ­¢æŒ‡ä»¤å†²çªç”¨ï¼‰
-    - `æ¡æ¼‚æµç“¶` 
-    - `è¯„è®ºæ¼‚æµç“¶` [æ¼‚æµç“¶ç¼–å·] [æ–‡æœ¬]
-    - `ä¸¾æŠ¥æ¼‚æµç“¶` [æ¼‚æµç“¶ç¼–å·]
-    - `æŸ¥çœ‹æ¼‚æµç“¶` [æ¼‚æµç“¶ç¼–å·]
-    - SUPERUSERæŒ‡ä»¤ï¼š
-        - `æ¸…ç©ºæ¼‚æµç“¶`
-        - `åˆ é™¤æ¼‚æµç“¶ [æ¼‚æµç“¶ç¼–å·]`
-* åŠŸèƒ½é¡»çŸ¥
+    - `ÈÓÆ¯Á÷Æ¿` [ÎÄ±¾/Í¼Æ¬]
+    - `¼ÄÆ¯Á÷Æ¿` [ÎÄ±¾/Í¼Æ¬] £¨Í¬`ÈÓÆ¯Á÷Æ¿`£¬·ÀÖ¹Ö¸Áî³åÍ»ÓÃ£©
+    - `¼ñÆ¯Á÷Æ¿` 
+    - `ÆÀÂÛÆ¯Á÷Æ¿` [Æ¯Á÷Æ¿±àºÅ] [ÎÄ±¾]
+    - `¾Ù±¨Æ¯Á÷Æ¿` [Æ¯Á÷Æ¿±àºÅ]
+    - `²é¿´Æ¯Á÷Æ¿` [Æ¯Á÷Æ¿±àºÅ]
+    - SUPERUSERÖ¸Áî£º
+        - `Çå¿ÕÆ¯Á÷Æ¿`
+        - `É¾³ýÆ¯Á÷Æ¿` [Æ¯Á÷Æ¿±àºÅ]
+        - `Æ¯Á÷Æ¿°×Ãûµ¥` [QQ / ÈºÁÄ] [QQºÅ / ÈººÅ]
+        - `Æ¯Á÷Æ¿ºÚÃûµ¥` [QQ / ÈºÁÄ] [QQºÅ / ÈººÅ]
+        - `Æ¯Á÷Æ¿ÏêÇé` [Æ¯Á÷Æ¿±àºÅ]
+* ¹¦ÄÜÐëÖª
     -
-    - `æ‰”æ¼‚æµç“¶`æŒ‡ä»¤æ— å­—æ•°é™åˆ¶ï¼Œå¦‚éœ€è¦å¯åœ¨ä»£ç ä¸­ä¿®æ”¹
-    - `æ¡æ¼‚æµç“¶`è‹¥æ¡åˆ°çš„æ¼‚æµç“¶å­˜åœ¨å›žå¤ï¼Œåˆ™ä¼šæ˜¾ç¤ºæœ€è¿‘ä¸‰æ¡(é»˜è®¤)ï¼Œä½¿ç”¨`æŸ¥çœ‹æ¼‚æµç“¶`æŸ¥çœ‹æ‰€æœ‰å›žå¤
-    - `æŸ¥çœ‹æ¼‚æµç“¶`ä¸ºä¿è¯éšæœºæ€§ï¼Œæ— è¯„è®ºæ—¶ä¸å±•ç¤ºæ¼‚æµç“¶å†…å®¹ï¼Œå¯åœ¨ä»£ç ä¸­ä¿®æ”¹
-    - `ä¸¾æŠ¥æ¼‚æµç“¶`äº”æ¬¡(é»˜è®¤)åŽå°†è‡ªåŠ¨åˆ é™¤
-    - `æ¸…ç©ºæ¼‚æµç“¶`æ— ç¡®è®¤è¿‡ç¨‹ï¼Œä½¿ç”¨éœ€è°¨æ…Ž
-    - `æ¼‚æµç“¶æ•°æ®åº“`å­˜æ”¾åœ¨`data/bottle/data.json`ä¸­
-    - `é»‘åå•ç¾¤ç»„`å¯åœ¨`__init__.py`åŒçº§è·¯å¾„`config.py`ä¸­æ·»åŠ 
-* æ–‡å­—å®¡æ ¸APIé…ç½®ï¼ˆå¯é€‰ï¼‰
+    - `ÈÓÆ¯Á÷Æ¿`Ö¸ÁîÎÞ×ÖÊýÏÞÖÆ£¬ÈçÐèÒª¿ÉÔÚ´úÂëÖÐÐÞ¸Ä
+    - `¼ñÆ¯Á÷Æ¿`Èô¼ñµ½µÄÆ¯Á÷Æ¿´æÔÚ»Ø¸´£¬Ôò»áÏÔÊ¾×î½üÈýÌõ(Ä¬ÈÏ)£¬Ê¹ÓÃ`²é¿´Æ¯Á÷Æ¿`²é¿´ËùÓÐ»Ø¸´
+    - `²é¿´Æ¯Á÷Æ¿`Îª±£Ö¤Ëæ»úÐÔ£¬ÎÞÆÀÂÛÊ±²»Õ¹Ê¾Æ¯Á÷Æ¿ÄÚÈÝ£¬¿ÉÔÚ´úÂëÖÐÐÞ¸Ä
+    - `ÆÀÂÛÆ¯Á÷Æ¿`Èô»úÆ÷ÈËÓÐ±»»Ø¸´ÈËºÃÓÑ£¬»á·¢ËÍ±»»Ø¸´Í¨Öª
+    - `¾Ù±¨Æ¯Á÷Æ¿`Îå´Î(Ä¬ÈÏ)ºó½«×Ô¶¯É¾³ý£¬¾Ù±¨³É¹¦ºó»áË½ÁÄSUPERUSERÆ¯Á÷Æ¿ÏêÇéÄÚÈÝ
+    - `Çå¿ÕÆ¯Á÷Æ¿`ÎÞÈ·ÈÏ¹ý³Ì£¬Ê¹ÓÃÐè½÷É÷
+    - `Æ¯Á÷Æ¿ÏêÇé`½«»á·¢ËÍÆ¯Á÷Æ¿·¢ËÍÕßµÄQQºÅºÍÈººÅ£¬»Ø¸´ÈËµÄQQºÅ
+    - `Æ¯Á÷Æ¿Êý¾Ý¿â`´æ·ÅÔÚ`data/bottle/data.json`ÖÐ
+    - `È¨ÏÞÊý¾Ý¿â` ´æ·ÅÔÚ`data/bottle/permissionsList.json`ÖÐ
+* È¨ÏÞ¿ØÖÆ
+    -
+    - ËùÓÐ·ÇSUPERUSERÖ¸Áî¾ùÊÜµ½È¨ÏÞ¿ØÖÆ
+    - `ÀäÈ´¹¦ÄÜ¿ª¹Ø`£º²å¼þÄ¬ÈÏ¿ªÆô£¬¿ÉÔÚ`data/bottle/permissionsList.json`ÖÐÐÞ¸Ä`enableCooldown`boolÖµ(True/False)
+    - `¹¦ÄÜÀäÈ´`£º²å¼þÄ¬ÈÏ 30 ÃëÀäÈ´£¬¿ÉÔÚ`data/bottle/permissionsList.json`ÖÐÐÞ¸Ä`cooldownTime`Öµ  
+    - °×Ãûµ¥ÓÅÏÈ¼¶¸ßÓÚºÚÃûµ¥ºÍÀäÈ´Ãûµ¥
+
+* ÎÄ×ÖÉóºËAPIÅäÖÃ£¨¿ÉÑ¡£©
     - 
-    - åœ¨[ç™¾åº¦æ™ºèƒ½äº‘](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)ä¸­ç”³è¯·`API_KEY`å’Œ`secret_key`
-    - åœ¨`config.py`ä¸­å¡«å…¥å³å¯
-    - ä¸é…ç½®è¯¥é¡¹åˆ™ä¸è¿›è¡Œå®¡æ ¸æ“ä½œ
+    - ÔÚ[°Ù¶ÈÖÇÄÜÔÆ](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)ÖÐÉêÇë`API_KEY`ºÍ`secret_key`
+    - ÔÚ`config.py`ÖÐÌîÈë¼´¿É
+    - ²»ÅäÖÃ¸ÃÏîÔò²»½øÐÐÉóºË²Ù×÷
 
-* å·²çŸ¥bug
+* ÒÑÖªbug
     -
-    - ç¬¬ä¸€æ¬¡åŠ è½½è¯¥æ’ä»¶æ—¶æ— æ³•æ­£å¸¸ä½¿ç”¨ï¼ˆé‡å¯åŽæ¢å¤ï¼‰
+    - µÚÒ»´Î¼ÓÔØ¸Ã²å¼þÊ±ÎÞ·¨Õý³£Ê¹ÓÃ£¨ÖØÆôºó»Ö¸´£©
 
-* æ›´æ–°æ—¥å¿—
+* ¸üÐÂÈÕÖ¾
+    - 
+    - 0.2.0
+        - Í£Ö¹Ê¹ÓÃ`black_group`
+        - Ôö¼ÓÊ¹ÓÃCD£¬ºÚ/°×Ãûµ¥Èº×é
+        - ¿ªÊ¼¼ÇÂ¼»Ø¸´ÈËQQºÅ£¨½öSUPERUSERÊ¹ÓÃ`Æ¯Á÷Æ¿ÏêÇé`¿É¼û£©
     - 0.1.8
-        - å¢žåŠ `request`åº“è¦æ±‚
-        - ä¸¢å‡ºæ¼‚æµç“¶åŽå±•ç¤ºæ¼‚æµç“¶ç¼–å·
+        - Ôö¼Ó`request`¿âÒªÇó
+        - ¶ª³öÆ¯Á÷Æ¿ºóÕ¹Ê¾Æ¯Á÷Æ¿±àºÅ
     - 0.1.7
-        - æ–°å¢žjsoné¡¹`key`ï¼Œå°†ä¸ä½¿ç”¨`del`åˆ é™¤æ¼‚æµç“¶ï¼Œè€Œä¿ç•™åŽŸæ¼‚æµç“¶æ•°æ®ä¾¿äºŽç®¡ç†è€…æŸ¥çœ‹
-        - æ–°å¢žjsoné¡¹`group_name`,`username`ï¼Œå°†åœ¨APIæ— æ³•èŽ·å–ä¿¡æ¯æ—¶ä½¿ç”¨
+        - ÐÂÔöjsonÏî`key`£¬½«²»Ê¹ÓÃ`del`É¾³ýÆ¯Á÷Æ¿£¬¶ø±£ÁôÔ­Æ¯Á÷Æ¿Êý¾Ý±ãÓÚ¹ÜÀíÕß²é¿´
+        - ÐÂÔöjsonÏî`group_name`,`username`£¬½«ÔÚAPIÎÞ·¨»ñÈ¡ÐÅÏ¢Ê±Ê¹ÓÃ
     - 0.1.6
-        - æ–°å¢žé…ç½®é¡¹`api_key`,'secret_key'ï¼Œç”¨äºŽæ–‡æœ¬å®¡æ ¸
-        - æ–°å¢žé…ç½®é¡¹`black_group`ï¼Œç”¨äºŽå±è”½ç‰¹å®šç¾¤èŠ
-* æ•ˆæžœå±•ç¤º
+        - ÐÂÔöÅäÖÃÏî`api_key`,'secret_key'£¬ÓÃÓÚÎÄ±¾ÉóºË
+        - ÐÂÔöÅäÖÃÏî`black_group`£¬ÓÃÓÚÆÁ±ÎÌØ¶¨ÈºÁÄ
+* Ð§¹ûÕ¹Ê¾
     -
     ![image](https://user-images.githubusercontent.com/97968466/191049794-1b409436-fd70-43d9-8dcb-3575e82fd69b.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191052704-1b5ec89d-7a49-40d6-a5d9-b0a0171c730e.png)  
-    ![image](https://user-images.githubusercontent.com/97968466/191250967-b702cf6e-c0c8-48b6-8ecb-68108bfc6eab.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)  
