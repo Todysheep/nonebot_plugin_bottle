@@ -1,6 +1,7 @@
 import json
 import random
-import requests 
+import requests
+import time
 from pathlib import Path
 from typing import List
 from nonebot.log import logger
@@ -19,26 +20,17 @@ class Bottle(object):
         if self.data_path.exists() and self.data_path.is_file():
             with self.data_path.open("r", encoding="utf-8") as f:
                 data: List[dict] = json.load(f)
+
             for i in data:
                 #旧版json兼容
-                if not i:
-                    self.__data.append({
-                        'del': 1
-                    })
-                    continue
-                try:
-                    i['del']
-                except:
-                    i['del'] = 0
-                try:
-                    i['group_name']
-                except:
-                    i['group_name'] = i['group']
-                try:
-                    i['user_name']
-                except:
-                    i['user_name'] = i['user']
-
+                isOldVersion = False
+                commentnew = []
+                for index, value in enumerate(i['comment']):
+                    if isinstance(value,str):
+                        isOldVersion = True
+                        commentnew.append([0,value])
+                if isOldVersion:
+                    i['comment'] = commentnew
                 try:
                     self.__data.append({
                         'del': i['del'],
@@ -114,9 +106,8 @@ class Bottle(object):
         '''
         if self.__data:
             index = random.randint(0, len(self.__data)-1)
-            if not self.__data[index]:
-                self.select()
-                return
+            if self.__data[index]['del']:
+                return self.select()
             self.__data[index]['picked'] += 1
             self.__save()
             return [index, self.__data[index]]
@@ -170,12 +161,14 @@ class Bottle(object):
         '''
         return self.__data[index]['report']
 
-    def comment(self, index: int, com: str):
+    def comment(self, index: int,user:str, com):
         '''
         评论漂流瓶
         `index`: 漂流瓶编号  
+        `user`: QQ号  
         `com`: 评论内容
         '''
+        com = [user,com]
         try:
             if not com in self.__data[index]['comment']:
                 self.__data[index]['comment'].append(com)
@@ -189,10 +182,7 @@ class Bottle(object):
         `index`: 漂流瓶编号
         '''
         try:
-            if self.__data[index]['comment']:
-                return self.__data[index]['comment']
-            else:
-                return []
+            return [value[1] for value in self.__data[index]['comment']]
         except:
             try:
                 self.__data[index]['comment'] = []
@@ -223,6 +213,137 @@ class Bottle(object):
             logger.warning('删除错误！')
             return False
 bottle = Bottle()
+
+class Audit(object):
+    bannedMessage = ''
+    def __init__(self) -> None:
+        self.data_path = Path("data/bottle/permissionsList.json").absolute()
+        self.data_dir = Path("data/bottle").absolute()
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.__data = {
+            'enableCooldown': True,
+            'cooldownTime': 30,
+            'bannedMessage': '',
+            'user': [],
+            'group':[],
+            'cooldown':{},
+            'whiteUser':[],
+            'whiteGroup': [],
+        }
+        self.__load()
+
+    def __load(self):
+        try:
+            with self.data_path.open("r+", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            with self.data_path.open('w+', encoding='utf-8') as f:
+                json.dump(self.__data, f)
+            logger.success(f"在 {self.data_path} 成功创建漂流瓶黑名单数据库")
+        else:
+            self.__data.update(data)
+            self.bannedMessage = self.__data['bannedMessage']
+            
+
+    def __save(self) -> None:
+        with self.data_path.open('w+', encoding='utf-8') as f:
+            f.write(json.dumps(self.__data, ensure_ascii=False, indent=4))
+
+    def add(self,mode,num):
+        '''
+        添加权限  
+        `mode`:  
+            `group`: 群号
+            `user`: QQ号
+            `cooldown`: 暂时冷却QQ号  
+            `whiteUser`: 白名单QQ号  
+            `whiteGroup`: 白名单群号  
+        `num`: QQ/QQ群号
+        '''
+        num = str(num)
+        try:
+            if mode != 'cooldown' and num not in self.__data[mode]:
+                self.__data[mode].append(num)
+            elif not (self.checkWhite('whiteUser',num) and self.check('whiteGroup',num)) and self.__data['enableCooldown'] and mode == 'cooldown':
+                self.__data['cooldown'][num] = int(time.time()) + self.__data['cooldownTime']
+            else:
+                return False
+            self.__save()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+        
+    def remove(self,mode,num):
+        '''
+        移除黑名单  
+        `mode`:  
+            `group`: 群号
+            `user`: QQ号
+            `whiteUser`: 白名单QQ号  
+            `whiteGroup`: 白名单群号  
+        `num`: QQ/QQ群号
+        '''
+        num = str(num)
+        try:
+            self.__data[mode].remove(num)
+            self.__save()
+            return True
+        except:
+            return False
+    
+    def verify(self,user,group):
+        '''
+        返回是否通过验证(白名单优先)  
+        `user`: QQ号
+        `group`: 群号
+
+        返回：  
+            `True`: 通过  
+            `False`: 未通过  
+        '''
+        if not (self.checkWhite('whiteUser',user) or self.checkWhite('whiteGroup',group)):
+            if self.check('user',user) or self.check('group',group) or self.check('cooldown',user):
+                return False
+        return True
+
+    def check(self,mode,num):
+        
+        '''
+        查找是否处于黑名单
+        `mode`:  
+            `group`: 群号
+            `user`: QQ号
+            `cooldown`: 暂时冷却QQ号  
+        `num`: QQ/QQ群号
+        '''
+        num = str(num)
+        if mode in ['group','user']:
+            if num in self.__data[mode]:
+                return True
+        else:
+            if num in self.__data[mode]:
+                if time.time() <= self.__data[mode][num]:
+                    return True
+        return False
+    
+    def checkWhite(self,mode,num:str):
+        '''
+        检查是否为白名单  
+        `mode`:  
+            `whiteUser`: 白名单QQ号  
+            `whiteGroup`: 白名单群号  
+        `num`: QQ/QQ群号
+        '''
+        num = str(num)
+        if mode == 'whiteUser' and num in self.__data['whiteUser']:
+            return True
+        elif mode == 'whiteGroup' and num in self.__data['whiteGroup']:
+            return True
+        else:
+            return False
+ba = Audit()
+
 
 def text_audit(text:str,ak = api_key,sk = secret_key):
     '''
