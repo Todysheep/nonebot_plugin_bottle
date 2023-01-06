@@ -275,7 +275,7 @@ class Audit(object):
         try:
             if mode != 'cooldown' and num not in self.__data[mode]:
                 self.__data[mode].append(num)
-            elif not (self.checkWhite('whiteUser',num) and self.check('whiteGroup',num)) and self.__data['enableCooldown'] and mode == 'cooldown':
+            elif not (self.checkWhite('whiteUser',num) or self.check('whiteGroup',num)) and self.__data['enableCooldown'] and mode == 'cooldown':
                 self.__data['cooldown'][num] = int(time.time()) + self.__data['cooldownTime']
             else:
                 return False

@@ -78,6 +78,7 @@ async def g(bot: Bot, event: GroupMessageEvent):
         comment:str = ""
         for i in comment_list[-3:]:
             comment += i+"\n"
+        ba.add('cooldown',event.user_id)
         await get.finish(f'【漂流瓶No.{bott[0]}|被捡到{data["picked"]}次】来自【{group}】的 {user} ！\n'+Message(data['text']) + (f"\n★评论共 {len(comment_list)} 条★\n{comment.strip()}" if comment else ""))
 
 @report.handle()
@@ -90,6 +91,7 @@ async def rep(bot: Bot, event: GroupMessageEvent):
     if result == 0:
         await report.finish("举报失败！请检查编号")
     if result == 1:
+        ba.add('cooldown',event.user_id)
         await report.finish(f"举报成功！关于此漂流瓶已经有 {bottle.check_report(index)} 次举报")
     if result == 2:
         # 获取漂流瓶详情
@@ -129,6 +131,7 @@ async def com(bot: Bot, event: GroupMessageEvent):
         await bot.send_msg(group_id=bottle.check_bottle(index)['group'], message=Message(f"[CQ:at,qq={bottle.check_bottle(index)['user']}] 你的{index}号漂流瓶被评论啦！\n{commen}"))
         await asyncio.sleep(2)
     finally:
+        ba.add('cooldown',event.user_id)
         await comment.finish("回复成功！")
 
 @check_bottle.handle()
@@ -154,6 +157,7 @@ async def che(bot: Bot, event: MessageEvent):
     comment = ""
     for i in comment_list:
         comment += i+"\n"
+    ba.add('cooldown',event.user_id)
     await check_bottle.finish(f"来自【{group}】的 {user} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n★评论共 {len(comment_list)} 条★\n{comment}【这个瓶子被捡到了{data['picked']}次！】")
 
 ###### SUPERUSER命令 ######
@@ -214,14 +218,14 @@ async def wh(bot:Bot, event: MessageEvent):
             await ban.finish(f"成功设置白名单{command[0]}：{command[1]}")
         else:
             ba.remove('whiteGroup',command[1])
-            await ban.finish(f"成功设置白名单{command[0]}：{command[1]}")
+            await ban.finish(f"成功移除白名单{command[0]}：{command[1]}")
 
     if command[0] in ['qq','QQ','user','用户','qq号','QQ号']:
         if ba.add('whiteUser',command[1]):
             await ban.finish(f"成功设置白名单{command[0]}：{command[1]}")
         else:
             ba.remove('whiteUser',command[1])
-            await ban.finish(f"成功解封{command[0]}：{command[1]}")
+            await ban.finish(f"成功移除白名单{command[0]}：{command[1]}")
 
 @comrem.handle()
 async def cr(bot:Bot,event: MessageEvent):
