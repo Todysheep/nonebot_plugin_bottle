@@ -34,7 +34,7 @@ async def thr(bot: Bot, event: GroupMessageEvent):
     audit = text_audit(text=message_text)
     if not audit == 'pass':
         if audit == 'Error': 
-            await throw.finish("文字审核未通过！原因：调用审核API失败" )
+            await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！" )
         elif audit['conclusion'] == '不合规':
             await throw.finish("文字审核未通过！原因：" + audit['data'][0]['msg'])
 
@@ -126,6 +126,16 @@ async def com(bot: Bot, event: GroupMessageEvent):
         commen = f"{user['nickname']}：{mes[2]}"
     except:
         await comment.finish("想评论什么呀，在后边写上吧！")
+    
+    # 进行文字审核
+    audit = text_audit(text=commen)
+    if not audit == 'pass':
+        if audit == 'Error': 
+            await comment.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表格式是否正确，或token是否正确设置！" )
+        elif audit['conclusion'] == '不合规':
+            await comment.finish("文字审核未通过！原因：" + audit['data'][0]['msg'])
+
+    # 审核通过
     bottle.comment(index,event.user_id, commen)
     try:
         await bot.send_msg(group_id=bottle.check_bottle(index)['group'], message=Message(f"[CQ:at,qq={bottle.check_bottle(index)['user']}] 你的{index}号漂流瓶被评论啦！\n{commen}"))

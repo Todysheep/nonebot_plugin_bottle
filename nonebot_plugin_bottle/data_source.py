@@ -355,7 +355,7 @@ class Audit(object):
             return False
 ba = Audit()
 
-
+cursepath = Path("data/bottle/curse.json").absolute()
 def text_audit(text:str,ak = api_key,sk = secret_key):
     '''
     文本审核(百度智能云)  
@@ -364,15 +364,36 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
     `sk`: secret_key
     '''
     if (not api_key) or (not secret_key):
-        #未配置key 直接通过审核
-        return 'pass'
+        # 未配置key 进行简单违禁词审核
+        try: 
+            with cursepath.open('r',encoding='utf-8') as f:
+                for i in json.load(f):
+                    if i in text:
+                        return {
+                            'conclusion': '不合规',
+                            'data': [
+                                {
+                                    'msg': f'触发违禁词 {i}'
+                                }
+                            ]
+                        }
+                    else:
+                        return 'pass'
+        except:
+            if not cursepath.exists():
+                with cursepath.open('w+',encoding='utf-8') as f:
+                    f.write("[]")
+                return 'pass'
+            else:
+                return 'Error'
     # access_token 获取
     host = f'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}'
     response = requests.get(host)
     if response:
         access_token = response.json()['access_token']
     else:
-        return True
+        # 未返回access_token 返回错误
+        return 'Error'
     
     request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
     params = {"text":text}
