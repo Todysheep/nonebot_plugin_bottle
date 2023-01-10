@@ -6,7 +6,7 @@ from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GR
 from .data_source import bottle,text_audit,ba
 from .config import black_group
 
-throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 ","丢漂流瓶"]),permission=GROUP, priority=100, block=True)
+throw = on_command("扔漂流瓶", aliases=set(["寄漂流瓶 ","丢漂流瓶"]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶 ", priority=100, block=True)
 comment = on_command("评论漂流瓶 ", priority=100, block=True)
@@ -24,10 +24,9 @@ async def thr(bot: Bot, event: GroupMessageEvent):
     if not ba.verify(event.user_id,event.group_id):
         await throw.finish(ba.bannedMessage)
 
-    message = str(event.message).split(maxsplit=1)[1]
-    message_text = str(event.message.extract_plain_text())[1] or ""
     try:
-        message[1]
+        message = str(event.message).split(" ",maxsplit=1)[1]
+        message_text = event.message.extract_plain_text().split(" ",maxsplit=2)[1]
     except:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
 

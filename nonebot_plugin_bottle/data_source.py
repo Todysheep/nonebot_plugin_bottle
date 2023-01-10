@@ -363,7 +363,9 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
     `ak`: api_key
     `sk`: secret_key
     '''
+    print("传入" + text)
     if (not api_key) or (not secret_key):
+        print("进行简单文字审核")
         # 未配置key 进行简单违禁词审核
         try: 
             with cursepath.open('r',encoding='utf-8') as f:
@@ -379,7 +381,8 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
                         }
                     else:
                         return 'pass'
-        except:
+        except Exception as e:
+            print(e)
             if not cursepath.exists():
                 with cursepath.open('w+',encoding='utf-8') as f:
                     f.write("[]")
