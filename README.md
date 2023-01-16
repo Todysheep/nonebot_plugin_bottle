@@ -3,7 +3,7 @@
     -
     - 使用 `pip install nonebot_plugin_bottle`
     - 使用 `nb plugin install nonebot_plugin_bottle`
-* 指令 (前应带指令前缀)
+* 指令 (前应带指令前缀，指令与后面文字应有空格隔开)
     - 
     - `扔漂流瓶` [文本/图片]
     - `寄漂流瓶` [文本/图片] （同`扔漂流瓶`，防止指令冲突用）
