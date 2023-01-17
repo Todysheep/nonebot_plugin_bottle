@@ -100,19 +100,21 @@ class Bottle(object):
             logger.warning("添加失败！")
             return 0
 
-    def select(self):
+    def select(self,time = 0):
         '''
         抽取漂流瓶
         '''
-        if self.__data:
+        if time >= 100:
+            return []
+        elif self.__data:
+            print(time)
             index = random.randint(0, len(self.__data)-1)
             if self.__data[index]['del']:
-                return self.select()
+                return self.select(time + 1)
             self.__data[index]['picked'] += 1
             self.__save()
             return [index, self.__data[index]]
-        else:
-            return []
+            
 
     def clear(self):
         '''
@@ -364,7 +366,6 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
     `sk`: secret_key
     '''
     if (not api_key) or (not secret_key):
-        print("进行简单文字审核")
         # 未配置key 进行简单违禁词审核
         try: 
             with cursepath.open('r',encoding='utf-8') as f:
@@ -378,8 +379,7 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
                                 }
                             ]
                         }
-                    else:
-                        return 'pass'
+                return 'pass'
         except:
             if not cursepath.exists():
                 with cursepath.open('w+',encoding='utf-8') as f:

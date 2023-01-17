@@ -1,19 +1,21 @@
 import asyncio
 import random
-from nonebot import on_command
+from nonebot import on_command,get_driver
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GROUP, Message
 from .data_source import bottle,text_audit,ba
 from .config import black_group
 
-throw = on_command("扔漂流瓶", aliases=set(["寄漂流瓶 ","丢漂流瓶"]),permission=GROUP, priority=100, block=True)
+bconfig = get_driver().config
+
+throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 ","丢漂流瓶 "]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶 ", priority=100, block=True)
 comment = on_command("评论漂流瓶 ", priority=100, block=True)
 check_bottle = on_command("查看漂流瓶 ", priority=100, block=True)
+remove = on_command("删除漂流瓶 ", priority=100, block=True)
 
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
-remove = on_command("删除漂流瓶 ",permission=SUPERUSER, priority=100, block=True)
 comrem = on_command("删除漂流瓶评论",permission=SUPERUSER, priority=100, block=True)
 listqq = on_command("漂流瓶详情",permission=SUPERUSER, priority=100, block=True)
 ban = on_command("漂流瓶黑名单",aliases=set(["banbottle",'漂流瓶封禁']),permission=SUPERUSER, priority=100, block=True)
@@ -25,8 +27,8 @@ async def thr(bot: Bot, event: GroupMessageEvent):
         await throw.finish(ba.bannedMessage)
 
     try:
-        message = str(event.message).split(" ",maxsplit=1)[1]
-        message_text = event.message.extract_plain_text().split(" ",maxsplit=2)[1]
+        message = str(event.message).split(maxsplit=1)[1]
+        message_text = event.message.extract_plain_text().split(maxsplit=2)[1]
     except:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
 
@@ -169,20 +171,23 @@ async def che(bot: Bot, event: MessageEvent):
     ba.add('cooldown',event.user_id)
     await check_bottle.finish(f"来自【{group}】的 {user} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n★评论共 {len(comment_list)} 条★\n{comment}【这个瓶子被捡到了{data['picked']}次！】")
 
+@remove.handle()
+async def rem(bot:Bot, event: GroupMessageEvent):
+    index = int(str(event.message).split()[1])
+    if str(event.user_id) in bconfig.superusers or bottle.check_bottle(index)['user'] == event.user_id:
+        if bottle.remove(index):
+            await remove.finish(f"成功删除 {index} 号漂流瓶！")
+        else:
+            await remove.finish('删除失败！请检查编号')
+    else:
+        await remove.finish('删除失败！你没有相关的权限！')
+
 ###### SUPERUSER命令 ######
 
 @clear.handle()
 async def cle(bot: Bot, event: MessageEvent):
     bottle.clear()
     await clear.finish("所有漂流瓶清空成功！")
-
-@remove.handle()
-async def rem(bot:Bot, event: GroupMessageEvent):
-    index = int(str(event.message).split()[1])
-    if bottle.remove(index):
-        await remove.finish(f"成功删除 {index} 号漂流瓶！")
-    else:
-        await remove.finish('删除失败！请检查编号')
 
 @listqq.handle()
 async def lis(bot: Bot, event: MessageEvent):
