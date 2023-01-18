@@ -6,8 +6,6 @@ from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GR
 from .data_source import bottle,text_audit,ba
 from .config import black_group
 
-bconfig = get_driver().config
-
 throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 ","丢漂流瓶 "]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶 ", priority=100, block=True)
@@ -28,9 +26,13 @@ async def thr(bot: Bot, event: GroupMessageEvent):
 
     try:
         message = str(event.message).split(maxsplit=1)[1]
-        message_text = event.message.extract_plain_text().split(maxsplit=2)[1]
     except:
         await throw.finish("想说些什么话呢？在指令后边写上吧！")
+    
+    try:
+        message_text = event.message.extract_plain_text().split(maxsplit=1)[1]
+    except:
+        message_text = ""
 
     audit = text_audit(text=message_text)
     if not audit == 'pass':
@@ -174,7 +176,7 @@ async def che(bot: Bot, event: MessageEvent):
 @remove.handle()
 async def rem(bot:Bot, event: GroupMessageEvent):
     index = int(str(event.message).split()[1])
-    if str(event.user_id) in bconfig.superusers or bottle.check_bottle(index)['user'] == event.user_id:
+    if str(event.user_id) in list(bot.config.superusers) or bottle.check_bottle(index)['user'] == event.user_id:
         if bottle.remove(index):
             await remove.finish(f"成功删除 {index} 号漂流瓶！")
         else:
