@@ -6,6 +6,7 @@ from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GR
 from .data_source import bottle,text_audit,ba
 from .config import black_group
 
+
 throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 ","丢漂流瓶 "]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶 ", priority=100, block=True)
@@ -166,12 +167,12 @@ async def che(bot: Bot, event: MessageEvent):
     except:
         group = data['group_name']
     if not comment_list:
-        await check_bottle.finish("这个编号的漂流瓶还没有评论哦！")
+        await check_bottle.finish(f"这个编号的漂流瓶还没有评论,不能给你看里面的东西！\n【该#{index} 漂流瓶来自【{group}】的 {user}，被捡到{data['picked']}次，于{data['time']}扔出】")
     comment = ""
     for i in comment_list:
         comment += i+"\n"
     ba.add('cooldown',event.user_id)
-    await check_bottle.finish(f"来自【{group}】的 {user} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n★评论共 {len(comment_list)} 条★\n{comment}【这个瓶子被捡到了{data['picked']}次！】")
+    await check_bottle.finish(f"来自【{group}】的 {user} 的第{index}号漂流瓶：\n" + Message(data['text']) + f"\n★评论共 {len(comment_list)} 条★\n{comment}【被捡到{data['picked']}次，于{data['time']}扔出】")
 
 @remove.handle()
 async def rem(bot:Bot, event: GroupMessageEvent):
@@ -250,4 +251,3 @@ async def cr(bot:Bot,event: MessageEvent):
         await comrem.finish("删除成功！")
     else:
         await comrem.finish("删除失败，请检查编号！")
-

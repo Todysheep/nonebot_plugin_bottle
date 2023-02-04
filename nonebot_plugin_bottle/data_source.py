@@ -22,7 +22,7 @@ class Bottle(object):
                 data: List[dict] = json.load(f)
 
             for i in data:
-                #旧版json兼容
+                # 旧版json兼容 - 评论
                 isOldVersion = False
                 commentnew = []
                 for index, value in enumerate(i['comment']):
@@ -31,6 +31,9 @@ class Bottle(object):
                         commentnew.append([0,value])
                 if isOldVersion:
                     i['comment'] = commentnew
+
+                # 旧版json兼容 - 时间time
+                i.setdefault('time','0000-00-00 00:00:00')
                 try:
                     self.__data.append({
                         'del': i['del'],
@@ -41,7 +44,8 @@ class Bottle(object):
                         "text": i['text'],
                         "report": i['report'],
                         "picked": i['picked'],
-                        "comment": i['comment']
+                        "comment": i['comment'],
+                        "time": i['time']
                     })
                 except:
                     self.__data.append({})
@@ -90,7 +94,8 @@ class Bottle(object):
             'report': 0,
             'picked': 0,
             'del': 0,
-            'comment': []
+            'comment': [],
+            'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
         }
         if not self.check(temp):
             self.__data.append(temp)
