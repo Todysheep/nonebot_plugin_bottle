@@ -45,7 +45,7 @@
     - 
     - 百度审核
         - 在[百度智能云](https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z)中申请`API_KEY`和`secret_key`
-        - 在`config.py`中填入即可
+        - 在`.env.*`文件中填写`nonebot_plugin_bottle_api_key`与`nonebot_plugin_bottle_secret_key`，参考[NoneBot2配置方式](https://v2.nonebot.dev/docs/tutorial/configuration#%E9%85%8D%E7%BD%AE%E6%96%B9%E5%BC%8F)
         - 不配置该项则进行`简单屏蔽词审核`
     - 简单屏蔽词审核
         - 在`data/bottle/curse.json`手动填写json文件（`list`格式，文件不存在则调用审核后生成）

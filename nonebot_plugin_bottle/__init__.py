@@ -1,11 +1,39 @@
 import asyncio
 import random
-from nonebot import on_command,get_driver
+from nonebot.plugin import PluginMetadata
+from nonebot import on_command
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, GROUP, Message
 from .data_source import bottle,text_audit,ba
-from .config import black_group
+from .config import Config
 
+__plugin_meta__ = PluginMetadata(
+    name="漂流瓶",
+    description="群与群互通的漂流瓶插件",
+    config=Config,
+    usage=f"""
+指令：
+    扔漂流瓶 [文本/图片]
+    寄漂流瓶 [文本/图片] （同扔漂流瓶，防止指令冲突用）
+    捡漂流瓶
+    评论漂流瓶 [漂流瓶编号] [文本]
+    举报漂流瓶 [漂流瓶编号]
+    查看漂流瓶 [漂流瓶编号]
+    删除漂流瓶 [漂流瓶编号]
+SUPERUSER指令：
+    清空漂流瓶
+    删除漂流瓶评论 [漂流瓶编号] [QQ号]
+    漂流瓶白名单 [QQ / 群聊] [QQ号 / 群号]
+    漂流瓶黑名单 [QQ / 群聊] [QQ号 / 群号]
+    漂流瓶详情 [漂流瓶编号]
+""".strip(),
+    extra={
+        "unique_name": "nonebot_plugin_bottle",
+        "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
+        "author": "Todysheep",
+        "version": "0.2.4",
+    },
+)
 
 throw = on_command("扔漂流瓶 ", aliases=set(["寄漂流瓶 ","丢漂流瓶 "]),permission=GROUP, priority=100, block=True)
 get = on_command("捡漂流瓶", priority=100, block=True)
@@ -35,7 +63,7 @@ async def thr(bot: Bot, event: GroupMessageEvent):
     except:
         message_text = ""
 
-    audit = text_audit(text=message_text)
+    audit = await text_audit(text=message_text)
     if not audit == 'pass':
         if audit == 'Error': 
             await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！" )
@@ -132,7 +160,7 @@ async def com(bot: Bot, event: GroupMessageEvent):
         await comment.finish("想评论什么呀，在后边写上吧！")
     
     # 进行文字审核
-    audit = text_audit(text=commen)
+    audit = await text_audit(text=commen)
     if not audit == 'pass':
         if audit == 'Error': 
             await comment.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表格式是否正确，或token是否正确设置！" )
