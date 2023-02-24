@@ -1,6 +1,6 @@
 import json
 import random
-import requests
+import httpx
 import time
 from pathlib import Path
 from typing import List
@@ -363,7 +363,7 @@ class Audit(object):
 ba = Audit()
 
 cursepath = Path("data/bottle/curse.json").absolute()
-def text_audit(text:str,ak = api_key,sk = secret_key):
+async def text_audit(text:str,ak = api_key,sk = secret_key):
     '''
     文本审核(百度智能云)  
     `text`: 待审核文本
@@ -394,20 +394,21 @@ def text_audit(text:str,ak = api_key,sk = secret_key):
                 return 'Error'
     # access_token 获取
     host = f'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}'
-    response = requests.get(host)
-    if response:
-        access_token = response.json()['access_token']
-    else:
-        # 未返回access_token 返回错误
-        return 'Error'
+    async with httpx.AsyncClient() as client:
+        response = await client.get(host)
+        if response:
+            access_token = response.json()['access_token']
+        else:
+            # 未返回access_token 返回错误
+            return 'Error'
     
-    request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
-    params = {"text":text}
-    request_url = request_url + "?access_token=" + access_token
-    headers = {'content-type': 'application/x-www-form-urlencoded'}
-    response = requests.post(request_url, data=params, headers=headers)
-    if response:
-        return response.json()
-    else:
-        # 调用审核API失败
-        return 'Error'
+        request_url = "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
+        params = {"text":text}
+        request_url = request_url + "?access_token=" + access_token
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        response = await client.post(request_url, data=params, headers=headers)
+        if response:
+            return response.json()
+        else:
+            # 调用审核API失败
+            return 'Error'
