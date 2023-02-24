@@ -17,7 +17,7 @@ setuptools.setup(
         'nonebot2>=2.0.0-beta.2',
         'nonebot-adapter-onebot>=2.0.0b1',
         'nonebot-adapter-onebot',
-        'requests',
+        'httpx',
         ],
     entry_points={},
     license='GNU GPLv3',
