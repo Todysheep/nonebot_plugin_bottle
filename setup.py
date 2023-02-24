@@ -1,11 +1,11 @@
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("README.md", "r",encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="nonebot_plugin_bottle",
-    version="0.2.2",
+    version="0.2.6",
     author="Todysheep",
     author_email="todysheep@163.com",
     description="Bottle post plugin in Nonebot",

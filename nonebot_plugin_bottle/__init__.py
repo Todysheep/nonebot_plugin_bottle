@@ -31,7 +31,7 @@ SUPERUSER指令：
         "unique_name": "nonebot_plugin_bottle",
         "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
         "author": "Todysheep",
-        "version": "0.2.4",
+        "version": "0.2.6",
     },
 )
 
@@ -119,9 +119,9 @@ async def rep(bot: Bot, event: GroupMessageEvent):
         await throw.finish(ba.bannedMessage)
 
     index = int(str(event.message).split(maxsplit=1)[1])
-    result = bottle.report(index)
+    result = bottle.report(index,event.user_id)
     if result == 0:
-        await report.finish("举报失败！请检查编号")
+        await report.finish("举报失败！")
     if result == 1:
         ba.add('cooldown',event.user_id)
         await report.finish(f"举报成功！关于此漂流瓶已经有 {bottle.check_report(index)} 次举报")
@@ -225,7 +225,7 @@ async def lis(bot: Bot, event: MessageEvent):
     command = str(event.message).split(" ")[1]
     data = bottle.check_bottle(int(command))
     if data:
-        mes = f"漂流瓶编号：{command}\n用户QQ：{data['user']}\n来源群组：{data['group']}\n"
+        mes = f"漂流瓶编号：{command}\n用户QQ：{data['user']}\n来源群组：{data['group']}\n发送时间：{data['time']}\n"
         mes += Message(data['text'])
         await listqq.send(mes)
         

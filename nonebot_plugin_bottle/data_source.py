@@ -32,8 +32,9 @@ class Bottle(object):
                 if isOldVersion:
                     i['comment'] = commentnew
 
-                # 旧版json兼容 - 时间time
+                # 旧版json兼容 - 时间time、举报者
                 i.setdefault('time','0000-00-00 00:00:00')
+                i.setdefault('reported',[])
                 try:
                     self.__data.append({
                         'del': i['del'],
@@ -43,6 +44,7 @@ class Bottle(object):
                         "group_name": i["group_name"],
                         "text": i['text'],
                         "report": i['report'],
+                        "reported": i['reported'],
                         "picked": i['picked'],
                         "comment": i['comment'],
                         "time": i['time']
@@ -92,6 +94,7 @@ class Bottle(object):
             'group_name': group_name,
             'text': text,
             'report': 0,
+            'reported': [],
             'picked': 0,
             'del': 0,
             'comment': [],
@@ -128,7 +131,7 @@ class Bottle(object):
         self.__data = []
         self.__save()
 
-    def report(self, index: int, timesMax: int = 5) -> int:
+    def report(self, index: int,user_id, timesMax: int = 5) -> int:
         '''
         举报漂流瓶  
         `index`: 漂流瓶编号
@@ -142,6 +145,9 @@ class Bottle(object):
         '''
         if index > len(self.__data)-1 or index < 0:
             return 0
+        if user_id in self.__data[index]['reported']:
+            return 0
+        
         try:
             self.__data[index]['report'] += 1
         except:
@@ -158,6 +164,7 @@ class Bottle(object):
             except:
                 return 0
         else:
+            self.__data[index]['reported'].append(user_id)
             self.__save()
             return 1
 
