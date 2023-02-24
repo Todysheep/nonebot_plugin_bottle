@@ -63,7 +63,7 @@ async def thr(bot: Bot, event: GroupMessageEvent):
     except:
         message_text = ""
 
-    audit = text_audit(text=message_text)
+    audit = await text_audit(text=message_text)
     if not audit == 'pass':
         if audit == 'Error': 
             await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！" )
@@ -160,7 +160,7 @@ async def com(bot: Bot, event: GroupMessageEvent):
         await comment.finish("想评论什么呀，在后边写上吧！")
     
     # 进行文字审核
-    audit = text_audit(text=commen)
+    audit = await text_audit(text=commen)
     if not audit == 'pass':
         if audit == 'Error': 
             await comment.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表格式是否正确，或token是否正确设置！" )
