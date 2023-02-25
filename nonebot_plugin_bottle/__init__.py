@@ -22,8 +22,9 @@ __plugin_meta__ = PluginMetadata(
     删除漂流瓶 [漂流瓶编号]
 SUPERUSER指令：
     清空漂流瓶
+    恢复漂流瓶 [漂流瓶编号]
     删除漂流瓶评论 [漂流瓶编号] [QQ号]
-    漂流瓶白名单 [QQ / 群聊] [QQ号 / 群号]
+    漂流瓶白名单 [QQ / 群聊 / 举报] [QQ号 / 群号]
     漂流瓶黑名单 [QQ / 群聊] [QQ号 / 群号]
     漂流瓶详情 [漂流瓶编号]
 """.strip(),
@@ -31,7 +32,7 @@ SUPERUSER指令：
         "unique_name": "nonebot_plugin_bottle",
         "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
         "author": "Todysheep",
-        "version": "0.2.6",
+        "version": "0.2.7",
     },
 )
 
@@ -42,6 +43,7 @@ comment = on_command("评论漂流瓶 ", priority=100, block=True)
 check_bottle = on_command("查看漂流瓶 ", priority=100, block=True)
 remove = on_command("删除漂流瓶 ", priority=100, block=True)
 
+resume = on_command("恢复漂流瓶 ", permission=SUPERUSER, priority=100, block=True)
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
 comrem = on_command("删除漂流瓶评论",permission=SUPERUSER, priority=100, block=True)
 listqq = on_command("漂流瓶详情",permission=SUPERUSER, priority=100, block=True)
@@ -115,7 +117,7 @@ async def g(bot: Bot, event: GroupMessageEvent):
 
 @report.handle()
 async def rep(bot: Bot, event: GroupMessageEvent):
-    if not ba.verify(event.user_id,event.group_id):
+    if (not ba.verify(event.user_id,event.group_id)) or (not ba.verifyReport(event.user_id)):
         await throw.finish(ba.bannedMessage)
 
     index = int(str(event.message).split(maxsplit=1)[1])
@@ -215,6 +217,14 @@ async def rem(bot:Bot, event: GroupMessageEvent):
 
 ###### SUPERUSER命令 ######
 
+@resume.handle()
+async def res(bot: Bot, event: MessageEvent):
+    index = int(str(event.message).split()[1])
+    if bottle.resume(index):
+        await resume.finish(f"成功恢复 {index} 号漂流瓶！")
+    else:
+        await resume.finish('恢复失败！请检查编号')
+
 @clear.handle()
 async def cle(bot: Bot, event: MessageEvent):
     bottle.clear()
@@ -254,6 +264,15 @@ async def li(bot:Bot, event: MessageEvent):
         else:
             ba.remove('user',command[1])
             await ban.finish(f"成功解封{command[0]}：{command[1]}")
+    
+    if command[0] in ['report','举报']:
+        result = ba.banreport(command[1])
+        if result == 1:
+            await ban.finish(f"成功取消{command[0]}权限：{command[1]}")
+        elif result == 0:
+            await ban.finish(f"成功赋予{command[0]}权限：{command[1]}")
+        else:
+            await ban.finish(result)
 
 @white.handle()
 async def wh(bot:Bot, event: MessageEvent):
@@ -271,6 +290,7 @@ async def wh(bot:Bot, event: MessageEvent):
         else:
             ba.remove('whiteUser',command[1])
             await ban.finish(f"成功移除白名单{command[0]}：{command[1]}")
+
 
 @comrem.handle()
 async def cr(bot:Bot,event: MessageEvent):

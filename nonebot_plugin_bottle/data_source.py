@@ -237,6 +237,20 @@ class Bottle(object):
         except:
             logger.warning('删除错误！')
             return False
+        
+    def resume(self,index:int):
+        '''
+        恢复漂流瓶
+        `index`: 漂流瓶编号
+        '''
+        try:
+            self.__data[index]['del'] = 0
+            self.__save()
+            return True
+        except:
+            logger.warning('恢复错误！')
+            return False
+        
 bottle = Bottle()
 
 class Audit(object):
@@ -252,6 +266,7 @@ class Audit(object):
             'user': [],
             'group':[],
             'cooldown':{},
+            'disreportable':[],
             'whiteUser':[],
             'whiteGroup': [],
         }
@@ -331,6 +346,19 @@ class Audit(object):
             if self.check('user',user) or self.check('group',group) or self.check('cooldown',user):
                 return False
         return True
+    
+    def verifyReport(self,qq):
+        '''
+        检查是否有举报权限  
+
+        返回：  
+            `True`: 具有权限  
+            `False`： 不具有权限  
+        '''
+        if str(qq) in self.__data['disreportable']:
+            return False
+        else:
+            return True
 
     def check(self,mode,num):
         
@@ -367,6 +395,28 @@ class Audit(object):
             return True
         else:
             return False
+        
+    def banreport(self,qq):
+        '''
+        删除/恢复某人的举报权限  
+        `qq`: QQ号  
+        返回:
+            `0`: 成功解封  
+            `1`: 成功封禁
+            `e`: 错误信息
+        '''
+        try:
+            if qq not in self.__data['disreportable']:
+                self.__data['disreportable'].append(qq)
+                self.__save()
+                return 1
+            else:
+                self.__data['disreportable'].remove(qq)
+                self.__save()
+                return 0
+        except Exception as e:
+            return e
+
 ba = Audit()
 
 cursepath = Path("data/bottle/curse.json").absolute()
