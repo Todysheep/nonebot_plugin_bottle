@@ -160,7 +160,7 @@ class BottleManager:
         self,
         user_id: int,
         group_id: int,
-        content: Message,
+        content: List[Dict[str, Any]],
         user_name: str,
         group_name: str,
         session: AsyncSession,
