@@ -7,6 +7,7 @@ import time
 import base64
 import hashlib
 from pathlib import Path
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
@@ -14,9 +15,9 @@ import aiofiles
 from nonebot.log import logger
 from pydantic import parse_obj_as
 from sqlalchemy import func, text, select
-from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
+from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 
 from .model import Bottle, Report, Comment
 from .config import api_key, secret_key, local_storage
@@ -51,9 +52,12 @@ async def cache_b64_file(seg: MessageSegment, dir_name: str):
     cache_file_dir = cache_dir / dir_name
     if not file.startswith("base64://"):
         if url := seg.data.get("url"):
-            async with httpx.AsyncClient() as client:
-                r = await client.get(url)
-                data = r.content
+            try:
+                async with httpx.AsyncClient() as client:
+                    r = await client.get(url)
+                    data = r.content
+            except httpx.TimeoutException:
+                return
             del seg.data["url"]
         else:
             return
@@ -79,6 +83,56 @@ async def serialize_message(message: Message) -> List[Dict[str, Any]]:
 
 def deserialize_message(message: List[Dict[str, Any]]) -> Message:
     return parse_obj_as(Message, message)
+
+
+@post_db_init
+async def _():
+    old_data = data_dir / "data.json"
+    if old_data.exists():
+        logger.info("开始迁移旧漂流瓶数据")
+        with open(old_data, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        async with create_session() as session:
+            for idx, i in enumerate(data):
+                # 旧版json兼容 - 评论
+                isOldVersion = False
+                commentnew = []
+                for index, value in enumerate(i["comment"]):
+                    if isinstance(value, str):
+                        isOldVersion = True
+                        commentnew.append([0, value])
+                if isOldVersion:
+                    i["comment"] = commentnew
+
+                # 旧版json兼容 - 时间time、举报者
+                i.setdefault("time", "0000-00-00 00:00:00")
+                i.setdefault("reported", [])
+                bottle = Bottle(
+                    user_id=i["user"],
+                    group_id=i["group"],
+                    user_name=i["user_name"],
+                    group_name=i["group_name"],
+                    content=await serialize_message(Message(i["text"])),
+                    report=i["report"],
+                    picked=i["picked"],
+                    is_del=i["del"],
+                    time=datetime.strptime(i["time"], "%Y-%m-%d %H:%M:%S"),
+                )
+                session.add(bottle)
+                for comment in i.get("comment", []):
+                    new_comment = Comment(
+                        user_id=comment[0],
+                        user_name=comment[1].split(":")[0],
+                        content=comment[1].split(":")[1],
+                        bottle_id=idx + 1,
+                    )
+                    session.add(new_comment)
+                for report in i.get("reported", []):
+                    new_report = Report(user_id=report, bottle_id=idx + 1)
+                    session.add(new_report)
+            await session.commit()
+            old_data.rename(data_dir / "data.json.old")
+            logger.info("旧漂流瓶数据迁移完成")
 
 
 class BottleManager:
