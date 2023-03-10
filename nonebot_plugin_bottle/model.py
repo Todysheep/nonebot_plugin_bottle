@@ -1,23 +1,9 @@
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import Any, Dict, List
 
-from nonebot.log import logger
-from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.orm import Mapped, mapped_column
 from nonebot_plugin_datastore import get_plugin_data
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import Mapped, relationship, mapped_column
-from sqlalchemy import (
-    JSON,
-    ARRAY,
-    Index,
-    Column,
-    String,
-    BigInteger,
-    ForeignKey,
-    UniqueConstraint,
-    func,
-    select,
-)
+from sqlalchemy import JSON, Index, BigInteger, UniqueConstraint
 
 Model = get_plugin_data().Model
 
@@ -53,7 +39,7 @@ class Bottle(Model):
     group_id: Mapped[int] = mapped_column(BigInteger)
     user_name: Mapped[str]
     group_name: Mapped[str]
-    content: Mapped[str]
+    content: Mapped[List[Dict[str, Any]]] = mapped_column(JSON)
     report: Mapped[int] = mapped_column(default=0)
     picked: Mapped[int] = mapped_column(default=0)
     is_del: Mapped[bool] = mapped_column(default=False)

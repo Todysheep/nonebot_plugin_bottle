@@ -1,8 +1,8 @@
 """init_db
 
-Revision ID: c8a5d6424007
+Revision ID: 449e066410fd
 Revises: 
-Create Date: 2023-03-10 13:22:40.934616
+Create Date: 2023-03-10 14:34:07.064331
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "c8a5d6424007"
+revision = "449e066410fd"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,7 +25,7 @@ def upgrade() -> None:
         sa.Column("group_id", sa.BigInteger(), nullable=False),
         sa.Column("user_name", sa.String(255), nullable=False),
         sa.Column("group_name", sa.String(255), nullable=False),
-        sa.Column("content", sa.String(255), nullable=False),
+        sa.Column("content", sa.JSON(), nullable=False),
         sa.Column("report", sa.Integer(), nullable=False),
         sa.Column("picked", sa.Integer(), nullable=False),
         sa.Column("is_del", sa.Boolean(), nullable=False),

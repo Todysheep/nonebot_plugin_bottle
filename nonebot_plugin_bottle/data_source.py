@@ -4,39 +4,81 @@ except:
     import json
 
 import time
+import base64
+import hashlib
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
 import aiofiles
 from nonebot.log import logger
+from pydantic import parse_obj_as
 from sqlalchemy import func, text, select
-from nonebot.adapters.onebot.v11 import Message
 from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
 from .model import Bottle, Report, Comment
 from .config import api_key, secret_key, local_storage
 
 data_dir = Path("data/bottle")
 if local_storage:
-    image_dir = data_dir / "images"
-    image_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = data_dir / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    for d in ["images", "records", "video"]:
+        (cache_dir / d).mkdir(parents=True, exist_ok=True)
 data_dir.mkdir(parents=True, exist_ok=True)
 
 
-async def serialize_message(message: Message) -> str:
-    if not local_storage:
-        return str(message)
-    else:
-        return str(message)  # 以后写
+# https://github.com/noneplugin/nonebot-plugin-chatrecorder
+async def cache_file(msg: Message):
+    for seg in msg:
+        if seg.type == "image":
+            await cache_b64_file(seg, "images")
+        elif seg.type == "record":
+            await cache_b64_file(seg, "records")
+        elif seg.type == "video":
+            await cache_b64_file(seg, "videos")
 
 
-def deserialize_message(message: str) -> Message:
-    if not local_storage:
-        return str(message)
+async def cache_b64_file(seg: MessageSegment, dir_name: str):
+    def replace_seg_file(path: Path):
+        seg.data["file"] = f"file:///{path.resolve()}"
+
+    file = seg.data.get("file", "")
+    if not file:
+        return
+    cache_file_dir = cache_dir / dir_name
+    if not file.startswith("base64://"):
+        if url := seg.data.get("url"):
+            async with httpx.AsyncClient() as client:
+                r = await client.get(url)
+                data = r.content
+            del seg.data["url"]
+        else:
+            return
     else:
-        return Message(message)
+        data = base64.b64decode(file.replace("base64://", ""))
+    hash = hashlib.md5(data).hexdigest()
+    filename = f"{hash}.cache"
+    cache_file_path = cache_file_dir / filename
+    cache_files = [f.name for f in cache_file_dir.iterdir() if f.is_file()]
+    if filename in cache_files:
+        replace_seg_file(cache_file_path)
+    else:
+        async with aiofiles.open(cache_file_path, "wb") as f:
+            await f.write(data)
+        replace_seg_file(cache_file_path)
+
+
+async def serialize_message(message: Message) -> List[Dict[str, Any]]:
+    if local_storage:
+        await cache_file(message)
+    return [seg.__dict__ for seg in message]
+
+
+def deserialize_message(message: List[Dict[str, Any]]) -> Message:
+    return parse_obj_as(Message, message)
 
 
 class BottleManager:
@@ -64,7 +106,7 @@ class BottleManager:
         self,
         user_id: int,
         group_id: int,
-        content: str,
+        content: Message,
         user_name: str,
         group_name: str,
         session: AsyncSession,
@@ -82,15 +124,13 @@ class BottleManager:
         Returns:
             int: 漂流瓶id
         """
-        if await session.scalar(
-            select(Bottle).where(
-                Bottle.user_id == user_id,
-                Bottle.group_id == group_id,
-                Bottle.content == content,
-            )
-        ):
-            logger.warning("添加失败！")
-            return 0
+        bottles = await session.scalars(
+            select(Bottle).where(Bottle.user_id == user_id, Bottle.group_id == group_id)
+        )
+        for bottle in bottles:
+            if bottle.content == content:
+                logger.warning("添加失败！")
+                return 0
         else:
             bottle = Bottle(
                 user_id=user_id,
@@ -302,7 +342,7 @@ class Audit(object):
             self.__save()
             return True
         except Exception as e:
-            print(e)
+            logger.warning(e)
             return False
 
     def remove(self, mode, num):
