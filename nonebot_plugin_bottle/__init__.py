@@ -1,8 +1,8 @@
 import random
 import asyncio
 
-from nonebot import on_command
 from nonebot.matcher import Matcher
+from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
 from nonebot.params import Depends, CommandArg

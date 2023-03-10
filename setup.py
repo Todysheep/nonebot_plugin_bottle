@@ -17,6 +17,7 @@ setuptools.setup(
         'nonebot2>=2.0.0-beta.2',
         'nonebot-adapter-onebot>=2.0.0b1',
         'nonebot-adapter-onebot',
+        'aiofiles>=0.8.0',
         'nonebot-plugin-datastore>=0.6.0a2',
         'httpx',
         ],

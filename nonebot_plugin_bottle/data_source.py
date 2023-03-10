@@ -1,9 +1,14 @@
-import json
+try:
+    import ujson as json
+except:
+    import json
+
 import time
 from pathlib import Path
 from typing import Optional, Sequence
 
 import httpx
+import aiofiles
 from nonebot.log import logger
 from sqlalchemy import func, text, select
 from nonebot.adapters.onebot.v11 import Message
@@ -424,8 +429,8 @@ async def text_audit(text: str, ak=api_key, sk=secret_key):
     if (not api_key) or (not secret_key):
         # 未配置key 进行简单违禁词审核
         try:
-            with cursepath.open("r", encoding="utf-8") as f:
-                for i in json.load(f):
+            async with aiofiles.open(cursepath, "r", encoding="utf-8") as f:
+                for i in json.loads(await f.read()):
                     if i in text:
                         return {"conclusion": "不合规", "data": [{"msg": f"触发违禁词 {i}"}]}
                 return "pass"
