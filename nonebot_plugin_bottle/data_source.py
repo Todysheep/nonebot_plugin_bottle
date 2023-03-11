@@ -4,13 +4,13 @@ except:
     import json
 
 import time
-import base64
 import hashlib
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
+import asyncio
 import aiofiles
 from nonebot.log import logger
 from pydantic import parse_obj_as
@@ -26,53 +26,36 @@ data_dir = Path("data/bottle")
 if local_storage:
     cache_dir = data_dir / "cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    for d in ["images", "records", "video"]:
-        (cache_dir / d).mkdir(parents=True, exist_ok=True)
 data_dir.mkdir(parents=True, exist_ok=True)
 
 
 # https://github.com/noneplugin/nonebot-plugin-chatrecorder
 async def cache_file(msg: Message):
-    for seg in msg:
-        if seg.type == "image":
-            await cache_b64_file(seg, "images")
-        elif seg.type == "record":
-            await cache_b64_file(seg, "records")
-        elif seg.type == "video":
-            await cache_b64_file(seg, "videos")
+    async with httpx.AsyncClient() as client:
+        await asyncio.gather(
+            *[cache_image_url(seg, client) for seg in msg if seg.type == "image"]
+        )
 
 
-async def cache_b64_file(seg: MessageSegment, dir_name: str):
-    def replace_seg_file(path: Path):
-        seg.data["file"] = f"file:///{path.resolve()}"
-
-    file = seg.data.get("file", "")
-    if not file:
-        return
-    cache_file_dir = cache_dir / dir_name
-    if not file.startswith("base64://"):
-        if url := seg.data.get("url"):
-            try:
-                async with httpx.AsyncClient() as client:
-                    r = await client.get(url)
-                    data = r.content
-            except httpx.TimeoutException:
-                return
-            del seg.data["url"]
-        else:
+async def cache_image_url(seg: MessageSegment, client: httpx.AsyncClient):
+    if url := seg.data.get("url"):
+        try:
+            r = await client.get(url)
+            data = r.content
+        except httpx.TimeoutException:
             return
+        seg.type = "cached_image"
+        seg.data.clear()
     else:
-        data = base64.b64decode(file.replace("base64://", ""))
+        return
     hash = hashlib.md5(data).hexdigest()
     filename = f"{hash}.cache"
-    cache_file_path = cache_file_dir / filename
-    cache_files = [f.name for f in cache_file_dir.iterdir() if f.is_file()]
-    if filename in cache_files:
-        replace_seg_file(cache_file_path)
-    else:
+    cache_file_path = cache_dir / filename
+    cache_files = [f.name for f in cache_dir.iterdir() if f.is_file()]
+    if filename not in cache_files:
         async with aiofiles.open(cache_file_path, "wb") as f:
             await f.write(data)
-        replace_seg_file(cache_file_path)
+    seg.data = {"file": filename}
 
 
 async def serialize_message(message: Message) -> List[Dict[str, Any]]:
@@ -82,6 +65,10 @@ async def serialize_message(message: Message) -> List[Dict[str, Any]]:
 
 
 def deserialize_message(message: List[Dict[str, Any]]) -> Message:
+    for seg in message:
+        if seg["type"] == "cached_image":
+            seg["type"] = "image"
+            seg["data"]["file"] = (cache_dir / seg["data"]["file"]).resolve().as_uri()
     return parse_obj_as(Message, message)
 
 
@@ -93,6 +80,7 @@ async def _():
         with open(old_data, "r", encoding="utf-8") as f:
             data = json.load(f)
         async with create_session() as session:
+            offset = await session.scalar(func.max(Bottle.id)) + 1
             for idx, i in enumerate(data):
                 # 旧版json兼容 - 评论
                 isOldVersion = False
@@ -124,11 +112,11 @@ async def _():
                         user_id=comment[0],
                         user_name=comment[1].split(":")[0],
                         content=comment[1].split(":")[1],
-                        bottle_id=idx + 1,
+                        bottle_id=idx + offset,
                     )
                     session.add(new_comment)
                 for report in i.get("reported", []):
-                    new_report = Report(user_id=report, bottle_id=idx + 1)
+                    new_report = Report(user_id=report, bottle_id=idx + offset)
                     session.add(new_report)
             await session.commit()
             old_data.rename(data_dir / "data.json.old")
