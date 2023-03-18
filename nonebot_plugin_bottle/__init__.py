@@ -6,6 +6,8 @@ from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
 from nonebot.params import Depends, CommandArg
+
+require("nonebot_plugin_datastore")
 from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from nonebot.adapters.onebot.v11 import (
@@ -27,8 +29,6 @@ from .data_source import (
     serialize_message,
     deserialize_message,
 )
-
-require("nonebot_plugin_datastore")
 
 __plugin_meta__ = PluginMetadata(
     name="漂流瓶",
