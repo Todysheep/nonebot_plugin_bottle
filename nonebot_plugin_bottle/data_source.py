@@ -80,7 +80,7 @@ async def _():
         with open(old_data, "r", encoding="utf-8") as f:
             data = json.load(f)
         async with create_session() as session:
-            offset = await session.scalar(func.max(Bottle.id)) + 1
+            offset = (await session.scalar(func.max(Bottle.id))) or 0 + 1
             for idx, i in enumerate(data):
                 # 旧版json兼容 - 评论
                 isOldVersion = False
