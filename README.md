@@ -60,25 +60,38 @@
         - 屏蔽词推荐（需要手动更改）：[防嘴臭插件](https://github.com/tkgs0/nonebot-plugin-antiinsult/blob/main/nonebot_plugin_antiinsult/curse.json)
         - 若为空列表则不进行审核
 
-* 已知bug
+* 配置文件（.env.*）
     -
-    - 第一次加载该插件时无法正常使用（重启后恢复）
+    | 配置项 | 配置名 | 变量类型 |  默认值 |
+    |:--------|:----------|:-------------:|------:|
+    | API KEY | nonebot_plugin_bottle_api_key | str | "" |
+    | SECRET KEY | nonebot_plugin_bottle_secret_key | str | "" |
+    | 是否缓存图片 | nonebot_plugin_bottle_local_storage | bool | True |
+
 
 * 更新日志
+    -  
+    - ***重构版本*** 1.0.0 [2023-3-10] [#32](https://github.com/Todysheep/nonebot_plugin_bottle/issues/32) [@LambdaYH](https://github.com/LambdaYH)
+        - 使用`nonebot_plugin_datastore`重构
+        - 异步读取违禁词文件
+        - 异步读取违禁词文件
+        - 启动时将旧json数据迁移
+        - 优化图片缓存
+        - 调整require位置
     - 0.2.7 [2023-2-25]
         - `举报漂流瓶`现在可以禁止某人使用了（`漂流瓶黑名单 举报 [qq号]`）
         - 新增`恢复漂流瓶`指令，可以恢复被删除的漂流瓶
     - 0.2.6 [2023-2-24]
         - `举报漂流瓶`修复了单人可以举报多次的问题
         - [ ] 格式化漂流瓶输出
-    - 0.2.5 [2023-2-24]
-        - 更改`requests`请求方式为`httpx` #29
-        - 适配`metadata` #29
-        - 💥破坏性更新 `api_key`与`secret_key`将在`.env.*`中填写（详见上方） #29
 
     <details>
         <summary>更多更新</summary>
 
+        - 0.2.5 [2023-2-24]
+            - 更改`requests`请求方式为`httpx` [#29](https://github.com/Todysheep/nonebot_plugin_bottle/issues/29)
+            - 适配`metadata` #29
+            - 💥破坏性更新 `api_key`与`secret_key`将在`.env.*`中填写（详见上方） [#29](https://github.com/Todysheep/nonebot_plugin_bottle/issues/29)
         - 0.2.4
             - 现在开始记录扔漂流瓶的时间，旧版本的漂流瓶时间为`0000-00-00 00:00:00`,使用`查看漂流瓶可以查看具体时间`
         - 0.2.3
@@ -109,9 +122,10 @@
 
 * 特别感谢
     -
-    - @a563696823 适配commit，更改config填写，适配httpx
-    - @MTmin 多机器人版本
-    - @Sevenyine 发了~~114514条~~issue
+    - **[@LambdaYH](https://github.com/LambdaYH)** PR了~~一个现有作者根本看不懂的~~重构版本 (1.0.0)
+    - [@a563696823](https://github.com/a563696823) 适配commit，更改config填写，适配httpx
+    - [@MTmin](https://github.com/MTmin) 多机器人版本
+    - [@Sevenyine](https://github.com/Sevenyine) 发了~~114514条~~issue
 
 * 效果展示
     -
@@ -119,7 +133,3 @@
     ![image](https://user-images.githubusercontent.com/97968466/213113862-e6c7568b-8686-4e97-8f83-7354ff1cb704.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191052704-1b5ec89d-7a49-40d6-a5d9-b0a0171c730e.png)  
     ![image](https://user-images.githubusercontent.com/97968466/191049649-2e8d8555-f285-470f-9f7b-f5a0994341ee.png)  
-
-* ~~TODO~~
-    -
-    - [ ] ~~我迟早要把你这个史山代码重构了~~
