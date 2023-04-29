@@ -55,7 +55,7 @@ SUPERUSER指令：
         "unique_name": "nonebot_plugin_bottle",
         "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
         "author": "Todysheep",
-        "version": "0.2.7",
+        "version": "1.0.0",
     },
 )
 
