@@ -3,6 +3,7 @@ try:
 except:
     import json
 
+import re
 import time
 import hashlib
 from pathlib import Path
@@ -112,8 +113,8 @@ async def _():
                 for comment in i.get("comment", []):
                     new_comment = Comment(
                         user_id=comment[0],
-                        user_name=comment[1].split(":")[0],
-                        content=comment[1].split(":")[1],
+                        user_name=re.split("[:：]", comment[1])[0],
+                        content=re.split("[:：]", comment[1])[1],
                         bottle_id=idx + offset,
                     )
                     session.add(new_comment)
