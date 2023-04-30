@@ -219,6 +219,8 @@ class BottleManager:
         ]:
             if engine.name == "sqlite":
                 await session.execute(text(f"DELETE FROM {table}"))
+            elif engine.name == "postgresql":
+                await session.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY"))
             else:
                 await session.execute(text(f"TRUNCATE TABLE {table}"))
 
