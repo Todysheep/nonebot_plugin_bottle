@@ -93,7 +93,9 @@ async def _():
                     i["comment"] = commentnew
 
                 # 旧版json兼容 - 时间time、举报者
-                i.setdefault("time", "0000-00-00 00:00:00")
+                i.setdefault("time", time.strftime("%Y-%m-%d %H:%M:%S"))
+                if i["time"] == "0000-00-00 00:00:00":
+                    i["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
                 i.setdefault("reported", [])
                 bottle = Bottle(
                     user_id=i["user"],
