@@ -310,7 +310,7 @@ async def _(
 
     try:
         user_info = await bot.get_group_member_info(
-            group_id=event.group_id, user_id=event.user_id
+            group_id=bottle.group_id, user_id=bottle.user_id
         )
         user_name = user_info.get("card") or user_info.get("nickname")
     except ActionFailed:
