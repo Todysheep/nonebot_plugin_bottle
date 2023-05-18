@@ -337,7 +337,7 @@ class BottleManager:
         return(
             await session.scalars(
                 select(Bottle)
-                .where(Bottle.user_id == user_id)
+                .where(Bottle.user_id == user_id, Bottle.is_del == False)
                 .order_by(Bottle.id)
             )
         ).all()
