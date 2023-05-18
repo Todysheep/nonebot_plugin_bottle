@@ -107,29 +107,27 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
         await matcher.finish(ba.bannedMessage)
 
+
 @listb.handle()
 async def _(
     bot: Bot,
-    matcher: Matcher,
     event: GroupMessageEvent,
-    args: Message = CommandArg(),
     session: AsyncSession = Depends(get_session),
 ):
-
     bottles = await bottle_manager.list_bottles(user_id=event.user_id, session=session)
     if not bottles:
         await listb.finish("你还没有扔过漂流瓶哦～")
 
     bottles_info = []
     for bottle in bottles:
-        message_parts = bottle.content
+        message_parts = deserialize_message(bottle.content)
         content_preview = ""
         for part in message_parts:
-            if part["type"] == "text":
+            if part.type == "text":
                 # 文字截取
-                text = part["data"]["text"]
+                text = part.data["text"]
                 content_preview += text[:20] + "..." if len(text) > 20 else text
-            elif part["type"] == "cached_image":
+            elif part.type == "image":
                 # 图片处理
                 content_preview += "[图片]"
         bottles_info.append(f"#{bottle.id}：{content_preview}")
@@ -139,24 +137,23 @@ async def _(
     if len(bottles_info) > 10:
         i = 1
         while len(bottles_info) > 10:
-            messages.append(total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】")
+            messages.append(
+                total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】"
+            )
             bottles_info = bottles_info[10:]
             i = i + 1
-        messages.append(total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页-完】")
+        messages.append(
+            total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页-完】"
+        )
 
-        #发送合并转发消息
+        # 发送合并转发消息
         if isinstance(event, GroupMessageEvent):
             await bot.send_group_forward_msg(
                 group_id=event.group_id,
                 messages=[
-                    {
-                        "type": "node",
-                        "data": {
-                            "name": "bottle",
-                            "uin": bot.self_id,
-                            "content": msg,
-                        },
-                    }
+                    MessageSegment.node_custom(
+                        user_id=event.self_id, nickname="bottle", content=msg
+                    )
                     for msg in messages
                 ],
             )
@@ -164,20 +161,16 @@ async def _(
             await bot.send_private_forward_msg(
                 user_id=event.user_id,
                 messages=[
-                    {
-                        "type": "node",
-                        "data": {
-                            "name": "bottle",
-                            "uin": bot.self_id,
-                            "content": msg,
-                        },
-                    }
+                    MessageSegment.node_custom(
+                        user_id=event.self_id, nickname="bottle", content=msg
+                    )
                     for msg in messages
                 ],
             )
     else:
         await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
     ba.add("cooldown", event.user_id)
+
 
 @throw.handle()
 async def _(
