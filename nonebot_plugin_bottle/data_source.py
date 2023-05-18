@@ -320,7 +320,24 @@ class BottleManager:
         )
         for comment in comments:
             await session.delete(comment)
+    
+    async def list_bottles(self, bottle: Bottle, user_id: int, session: AsyncSession) -> Sequence[Bottle]:
+        """获取用户扔出的所有漂流瓶
 
+        Args:
+            user_id (int): 用户ID
+            session (AsyncSession): 数据库会话
+
+        Returns:
+            Sequence[Bottle]: 用户扔出的所有漂流瓶
+        """
+        return(
+            await session.scalars(
+                select(Bottle)
+                .where(Bottle.user_id == user_id)
+                .order_by(Bottle.id)
+            )
+        ).all()
 
 bottle_manager = BottleManager()
 
