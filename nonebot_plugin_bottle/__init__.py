@@ -110,11 +110,11 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 
 @listb.handle()
 async def _(
-    bot: Bot,
-    event: GroupMessageEvent,
-    session: AsyncSession = Depends(get_session),
+    bot: Bot, event: GroupMessageEvent, session: AsyncSession = Depends(get_session)
 ):
-    bottles = await bottle_manager.list_bottles(user_id=event.user_id, session=session)
+    bottles = await bottle_manager.list_bottles(
+        user_id=event.user_id, session=session, include_del=False
+    )
     if not bottles:
         await listb.finish("你还没有扔过漂流瓶哦～")
 
