@@ -113,8 +113,11 @@ async def _(
     bot: Bot,
     event: GroupMessageEvent,
     session: AsyncSession = Depends(get_session),
+    include_del=False
 ):
-    bottles = await bottle_manager.list_bottles(user_id=event.user_id, session=session)
+    bottles = await bottle_manager.list_bottles(
+        user_id=event.user_id, session=session, include_del=include_del
+        )
     if not bottles:
         await listb.finish("你还没有扔过漂流瓶哦～")
 
