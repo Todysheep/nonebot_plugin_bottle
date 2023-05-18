@@ -135,13 +135,14 @@ async def _(
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
     messages = []
+    total_bottles_info = f"您总共扔了{len(bottles_info)}个漂流瓶～\n"
     if len(bottles_info) > 10:
         i = 1
         while len(bottles_info) > 10:
-            messages.append("\n".join(bottles_info[:10]) + f"\n【第{i}页】")
+            messages.append(total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】")
             bottles_info = bottles_info[10:]
             i = i + 1
-        messages.append("\n".join(bottles_info[:10]) + f"\n【第{i}页-完】")
+        messages.append(total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页-完】")
 
         #发送合并转发消息
         if isinstance(event, GroupMessageEvent):
@@ -175,7 +176,7 @@ async def _(
                 ],
             )
     else:
-        await listb.finish(f"您总共扔了{len(bottles_info)}个漂流瓶。\n" + "\n".join(bottles_info[:10]))
+        await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
     ba.add("cooldown", event.user_id)
 
 @throw.handle()
