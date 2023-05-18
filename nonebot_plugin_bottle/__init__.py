@@ -43,6 +43,7 @@ __plugin_meta__ = PluginMetadata(
     举报漂流瓶 [漂流瓶编号]
     查看漂流瓶 [漂流瓶编号]
     删除漂流瓶 [漂流瓶编号]
+    我的漂流瓶
 SUPERUSER指令：
     清空漂流瓶
     恢复漂流瓶 [漂流瓶编号]
@@ -67,6 +68,7 @@ report = on_command("举报漂流瓶", priority=100, block=True)
 comment = on_command("评论漂流瓶", priority=100, block=True)
 check_bottle = on_command("查看漂流瓶", priority=100, block=True)
 remove = on_command("删除漂流瓶", priority=100, block=True)
+listb = on_command("我的漂流瓶", priority=100, block=True)
 
 resume = on_command("恢复漂流瓶", permission=SUPERUSER, priority=100, block=True)
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
@@ -105,6 +107,27 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
         await matcher.finish(ba.bannedMessage)
 
+@listb.handle()
+async def _(
+    bot: Bot,
+    matcher: Matcher,
+    event: GroupMessageEvent,
+    args: Message = CommandArg(),
+    session: AsyncSession = Depends(get_session),
+):
+
+    bottles = await bottle_manager.list_bottles(event.user_id, session=session)
+    if not bottles:
+        await listb.finish("你还没有扔过漂流瓶哦～")
+    bottles_info = []
+    for bottle in bottles:
+        content_preview = bottle.content[:20] + '...' if len(bottle.content) > 20 else bottle.content
+        bottles_info.append(f"#{bottle.index}：{content_preview}")
+
+    # 将所有的漂流瓶信息发送给用户
+    list_str = "\n".join(bottles_info)
+    ba.add("cooldown", event.user_id)
+    await listb.send(f"您总共扔了{len(bottles_info)}个漂流瓶。\n{list_str}")
 
 @throw.handle()
 async def _(
