@@ -134,10 +134,49 @@ async def _(
                 content_preview += "[图片]"
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
-    list_str = "\n".join(bottles_info)
-    ba.add("cooldown", event.user_id)
-    await listb.send(f"您总共扔了{len(bottles_info)}个漂流瓶。\n{list_str}")
+    messages = []
+    if len(bottles_info) > 10:
+        i = 1
+        while len(bottles_info) > 10:
+            messages.append("\n".join(bottles_info[:10]) + f"\n【第{i}页】")
+            bottles_info = bottles_info[10:]
+            i = i + 1
+        messages.append("\n".join(bottles_info[:10]) + f"\n【第{i}页-完】")
 
+        #发送合并转发消息
+        if isinstance(event, GroupMessageEvent):
+            await bot.send_group_forward_msg(
+                group_id=event.group_id,
+                messages=[
+                    {
+                        "type": "node",
+                        "data": {
+                            "name": "bottle",
+                            "uin": bot.self_id,
+                            "content": msg,
+                        },
+                    }
+                    for msg in messages
+                ],
+            )
+        else:
+            await bot.send_private_forward_msg(
+                user_id=event.user_id,
+                messages=[
+                    {
+                        "type": "node",
+                        "data": {
+                            "name": "bottle",
+                            "uin": bot.self_id,
+                            "content": msg,
+                        },
+                    }
+                    for msg in messages
+                ],
+            )
+    else:
+        await listb.finish(f"您总共扔了{len(bottles_info)}个漂流瓶。\n" + "\n".join(bottles_info[:10]))
+    ba.add("cooldown", event.user_id)
 
 @throw.handle()
 async def _(
