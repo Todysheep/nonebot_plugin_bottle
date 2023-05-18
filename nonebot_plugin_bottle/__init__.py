@@ -321,9 +321,9 @@ async def _(
     except ActionFailed:
         group_name = bottle.group_name
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
-    if not comments:
+    if not comments and event.user_id != bottle.user_id:
         await check_bottle.finish(
-            f"这个编号的漂流瓶还没有评论,不能给你看里面的东西！\n【该#{index} 漂流瓶来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+            f"这个编号的漂流瓶还没有评论或你不是此漂流瓶的主人，不能给你看里面的东西！\n【该#{index} 漂流瓶来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
