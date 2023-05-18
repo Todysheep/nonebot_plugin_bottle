@@ -5,7 +5,8 @@ from nonebot.matcher import Matcher
 from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
-from nonebot.params import Depends, CommandArg
+from nonebot.params import Depends, CommandArg, Arg
+from nonebot.typing import T_State
 
 require("nonebot_plugin_datastore")
 from nonebot_plugin_datastore import get_session
@@ -407,6 +408,7 @@ async def rem(
     bot: Bot,
     matcher: Matcher,
     event: GroupMessageEvent,
+    state: T_State,
     arg: Message = CommandArg(),
     session: AsyncSession = Depends(get_session),
 ):
@@ -416,11 +418,35 @@ async def rem(
         str(event.user_id) in list(bot.config.superusers)
         or bottle.user_id == event.user_id
     ):
+        message_parts = deserialize_message(bottle.content)
+        content_preview = ""
+        for part in message_parts:
+            if part.type == "text":
+                # 文字截取
+                text = part.data["text"]
+                content_preview += text[:20] + "..." if len(text) > 20 else text
+            elif part.type == "image":
+                # 图片处理
+                content_preview += "[图片]"
+        state['bottle'] = bottle
+        state['index'] = index
+        await remove.send(f"你是否要删除漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
+    else:
+        await remove.finish("删除失败！你没有相关的权限！")
+
+proceed = ['是', 'Y', 'Yes', 'y', 'yes']
+
+@remove.got("prompt", prompt="")
+async def remove_confirmation(bot: Bot, state: T_State, prompt: Message = Arg(), conf: Message = Arg("prompt"), session: AsyncSession = Depends(get_session)):
+    if str(conf) in proceed:
+        bottle = state['bottle']
+        index = state['index']
         bottle.is_del = True
         await session.commit()
         await remove.finish(f"成功删除 {index} 号漂流瓶！")
     else:
-        await remove.finish("删除失败！你没有相关的权限！")
+        await remove.finish("取消删除操作。")
+
 
 
 ###### SUPERUSER命令 ######
