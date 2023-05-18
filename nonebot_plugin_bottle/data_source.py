@@ -321,9 +321,9 @@ class BottleManager:
         for comment in comments:
             await session.delete(comment)
     
-    async def list_bottles(self, bottle: Bottle, user_id: int, session: AsyncSession) -> Sequence[Bottle]:
+    async def list_bottles(self, user_id: int, session: AsyncSession) -> Sequence[Bottle]:
         """获取用户扔出的所有漂流瓶
-
+    
         Args:
             user_id (int): 用户ID
             session (AsyncSession): 数据库会话
