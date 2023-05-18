@@ -116,18 +116,28 @@ async def _(
     session: AsyncSession = Depends(get_session),
 ):
 
-    bottles = await bottle_manager.list_bottles(event.user_id, session=session)
+    bottles = await bottle_manager.list_bottles(user_id=event.user_id, session=session)
     if not bottles:
         await listb.finish("你还没有扔过漂流瓶哦～")
+
     bottles_info = []
     for bottle in bottles:
-        content_preview = bottle.content[:20] + '...' if len(bottle.content) > 20 else bottle.content
-        bottles_info.append(f"#{bottle.index}：{content_preview}")
+        message_parts = bottle.content
+        content_preview = ""
+        for part in message_parts:
+            if part["type"] == "text":
+                # 文字截取
+                text = part["data"]["text"]
+                content_preview += text[:20] + "..." if len(text) > 20 else text
+            elif part["type"] == "cached_image":
+                # 图片处理
+                content_preview += "[图片]"
+        bottles_info.append(f"#{bottle.id}：{content_preview}")
 
-    # 将所有的漂流瓶信息发送给用户
     list_str = "\n".join(bottles_info)
     ba.add("cooldown", event.user_id)
     await listb.send(f"您总共扔了{len(bottles_info)}个漂流瓶。\n{list_str}")
+
 
 @throw.handle()
 async def _(
