@@ -320,12 +320,12 @@ class BottleManager:
         )
         for comment in comments:
             await session.delete(comment)
-    
+
     async def list_bottles(
         self, user_id: int, session: AsyncSession, include_del: bool = False
-        ) -> Sequence[Bottle]:
+    ) -> Sequence[Bottle]:
         """获取用户扔出的所有漂流瓶
-    
+
         Args:
             user_id (int): 用户ID
             session (AsyncSession): 数据库会话
@@ -334,13 +334,15 @@ class BottleManager:
         Returns:
             Sequence[Bottle]: 用户扔出的所有漂流瓶
         """
-        return(
+        whereclause = [Bottle.user_id == user_id]
+        if not include_del:
+            whereclause.append(Bottle.is_del == False)
+        return (
             await session.scalars(
-                select(Bottle)
-                .where(Bottle.user_id == user_id, Bottle.is_del == False)
-                .order_by(Bottle.id)
+                select(Bottle).where(*whereclause).order_by(Bottle.id)
             )
         ).all()
+
 
 bottle_manager = BottleManager()
 
