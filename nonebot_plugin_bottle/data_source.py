@@ -72,7 +72,8 @@ def deserialize_message(message: List[Dict[str, Any]]) -> Message:
             seg["data"]["file"] = (cache_dir / seg["data"]["file"]).resolve().as_uri()
     return parse_obj_as(Message, message)
 
-async def get_content_preview(bottle: Bottle) -> str:
+
+def get_content_preview(bottle: Bottle) -> str:
     message_parts = deserialize_message(bottle.content)
     content_preview = ""
     for part in message_parts:
@@ -355,6 +356,7 @@ class BottleManager:
                 select(Bottle).where(*whereclause).order_by(Bottle.id)
             )
         ).all()
+
 
 bottle_manager = BottleManager()
 

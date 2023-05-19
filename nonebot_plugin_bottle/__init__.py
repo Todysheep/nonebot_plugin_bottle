@@ -122,7 +122,7 @@ async def _(
 
     bottles_info = []
     for bottle in bottles:
-        content_preview = await get_content_preview(bottle)
+        content_preview = get_content_preview(bottle)
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
     messages = []
@@ -407,7 +407,7 @@ async def _(
     index = arg.extract_plain_text().strip()
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
-        content_preview = await get_content_preview(bottle)
+        content_preview = get_content_preview(bottle)
         state["index"] = index
         state["session"] = session
         state["matcher"] = matcher
