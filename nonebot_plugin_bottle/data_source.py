@@ -5,13 +5,13 @@ except:
 
 import re
 import time
+import asyncio
 import hashlib
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
-import asyncio
 import aiofiles
 from nonebot.log import logger
 from pydantic import parse_obj_as
@@ -71,6 +71,20 @@ def deserialize_message(message: List[Dict[str, Any]]) -> Message:
             seg["type"] = "image"
             seg["data"]["file"] = (cache_dir / seg["data"]["file"]).resolve().as_uri()
     return parse_obj_as(Message, message)
+
+
+def get_content_preview(bottle: Bottle) -> str:
+    message_parts = deserialize_message(bottle.content)
+    content_preview = ""
+    for part in message_parts:
+        if part.type == "text":
+            # 文字截取
+            text = part.data["text"]
+            content_preview += text[:20] + "..." if len(text) > 20 else text
+        elif part.type == "image":
+            # 图片处理
+            content_preview += "[图片]"
+    return content_preview
 
 
 @post_db_init
