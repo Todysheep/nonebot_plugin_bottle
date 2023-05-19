@@ -29,6 +29,7 @@ from .data_source import (
     bottle_manager,
     serialize_message,
     deserialize_message,
+    get_content_preview,
 )
 
 __plugin_meta__ = PluginMetadata(
@@ -121,7 +122,7 @@ async def _(
 
     bottles_info = []
     for bottle in bottles:
-        content_preview = get_content_preview(bottle)
+        content_preview = await get_content_preview(bottle)
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
     messages = []
@@ -406,16 +407,7 @@ async def _(
     index = arg.extract_plain_text().strip()
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
-        message_parts = deserialize_message(bottle.content)
-        content_preview = ""
-        for part in message_parts:
-            if part.type == "text":
-                # 文字截取
-                text = part.data["text"]
-                content_preview += text[:20] + "..." if len(text) > 20 else text
-            elif part.type == "image":
-                # 图片处理
-                content_preview += "[图片]"
+        content_preview = await get_content_preview(bottle)
         state["index"] = index
         state["session"] = session
         state["matcher"] = matcher
@@ -434,6 +426,7 @@ async def _(state: T_State, conf: str = ArgStr("prompt")):
         matcher = state["matcher"]
         session = state["session"]
         bottle = await get_bottle(index=index, matcher=matcher, session=session)
+        # 如果不再获取一遍bottle会报错（悲）
         bottle.is_del = True
         await session.commit()
         await remove.send(f"成功删除 {index} 号漂流瓶！")
