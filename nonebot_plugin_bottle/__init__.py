@@ -6,11 +6,11 @@ from nonebot.matcher import Matcher
 from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
-from nonebot.params import Depends, CommandArg, ArgStr
+from nonebot.params import ArgStr, Depends, CommandArg
 
 require("nonebot_plugin_datastore")
-from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from nonebot_plugin_datastore import get_session, create_session
 from nonebot.adapters.onebot.v11 import (
     GROUP,
     Bot,
@@ -408,9 +408,7 @@ async def _(
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
         content_preview = get_content_preview(bottle)
-        state["index"] = index
-        state["session"] = session
-        state["matcher"] = matcher
+        state["index"] = int(index)
         await remove.send(f"你是否要删除漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
     else:
         await remove.finish("删除失败！你没有相关的权限！")
@@ -423,12 +421,11 @@ proceed = ["是", "Y", "Yes", "y", "yes"]
 async def _(state: T_State, conf: str = ArgStr("prompt")):
     if conf in proceed:
         index = state["index"]
-        matcher = state["matcher"]
-        session = state["session"]
-        bottle = await get_bottle(index=index, matcher=matcher, session=session)
-        # 如果不再获取一遍bottle会报错（悲）
-        bottle.is_del = True
-        await session.commit()
+        async with create_session() as session:
+            # 前面验证了id合法性后这里就直接拿了，由于是不同的会话所以必须重新获取（大概）
+            bottle = await bottle_manager.get_bottle(index=index, session=session)
+            bottle.is_del = True
+            await session.commit()
         await remove.send(f"成功删除 {index} 号漂流瓶！")
     else:
         await remove.finish("取消删除操作。")
