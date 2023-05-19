@@ -428,8 +428,9 @@ async def rem(
             elif part.type == "image":
                 # 图片处理
                 content_preview += "[图片]"
-        state['bottle'] = bottle
         state['index'] = index
+        state['session'] = session
+        state['matcher'] = matcher
         await remove.send(f"你是否要删除漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
     else:
         await remove.finish("删除失败！你没有相关的权限！")
@@ -437,10 +438,12 @@ async def rem(
 proceed = ['是', 'Y', 'Yes', 'y', 'yes']
 
 @remove.got("prompt", prompt="")
-async def remove_confirmation(bot: Bot, state: T_State, prompt: Message = Arg(), conf: Message = Arg("prompt"), session: AsyncSession = Depends(get_session)):
+async def remove_confirmation(bot: Bot, state: T_State, conf: Message = Arg("prompt")):
     if str(conf) in proceed:
-        bottle = state['bottle']
         index = state['index']
+        matcher = state['matcher']
+        session = state['session']
+        bottle = await get_bottle(index=index, matcher=matcher, session=session)
         bottle.is_del = True
         await session.commit()
         await remove.finish(f"成功删除 {index} 号漂流瓶！")
