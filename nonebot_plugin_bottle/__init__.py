@@ -121,16 +121,7 @@ async def _(
 
     bottles_info = []
     for bottle in bottles:
-        message_parts = deserialize_message(bottle.content)
-        content_preview = ""
-        for part in message_parts:
-            if part.type == "text":
-                # 文字截取
-                text = part.data["text"]
-                content_preview += text[:20] + "..." if len(text) > 20 else text
-            elif part.type == "image":
-                # 图片处理
-                content_preview += "[图片]"
+        content_preview = get_content_preview(bottle)
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
     messages = []

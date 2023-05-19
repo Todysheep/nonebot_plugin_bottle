@@ -72,6 +72,19 @@ def deserialize_message(message: List[Dict[str, Any]]) -> Message:
             seg["data"]["file"] = (cache_dir / seg["data"]["file"]).resolve().as_uri()
     return parse_obj_as(Message, message)
 
+async def get_content_preview(bottle: Bottle) -> str:
+    message_parts = deserialize_message(bottle.content)
+    content_preview = ""
+    for part in message_parts:
+        if part.type == "text":
+            # 文字截取
+            text = part.data["text"]
+            content_preview += text[:20] + "..." if len(text) > 20 else text
+        elif part.type == "image":
+            # 图片处理
+            content_preview += "[图片]"
+    return content_preview
+
 
 @post_db_init
 async def _():
@@ -342,7 +355,6 @@ class BottleManager:
                 select(Bottle).where(*whereclause).order_by(Bottle.id)
             )
         ).all()
-
 
 bottle_manager = BottleManager()
 
