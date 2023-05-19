@@ -109,6 +109,8 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
         await matcher.finish(ba.bannedMessage)
 
+# 信息初始化
+proceed = ["是", "Y", "Yes", "y", "yes"]
 
 @listb.handle()
 async def _(
@@ -120,11 +122,13 @@ async def _(
     if not bottles:
         await listb.finish("你还没有扔过漂流瓶哦～")
 
+    # 获取漂流瓶预览内容
     bottles_info = []
     for bottle in bottles:
         content_preview = get_content_preview(bottle)
         bottles_info.append(f"#{bottle.id}：{content_preview}")
 
+    # 整理消息
     messages = []
     total_bottles_info = f"您总共扔了{len(bottles_info)}个漂流瓶～\n"
     if len(bottles_info) > 10:
@@ -414,9 +418,6 @@ async def _(
         await remove.finish("删除失败！你没有相关的权限！")
 
 
-proceed = ["是", "Y", "Yes", "y", "yes"]
-
-
 @remove.got("prompt")
 async def _(state: T_State, conf: str = ArgStr("prompt")):
     if conf in proceed:
@@ -450,11 +451,19 @@ async def _(
 
 
 @clear.handle()
-async def _(session: AsyncSession = Depends(get_session)):
-    await bottle_manager.clear(session)
-    await session.commit()
-    await clear.finish("所有漂流瓶清空成功！")
+async def _(session: AsyncSession = Depends(get_session), state: T_State):
+    state['session'] = session
+    await clear.send("你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）")
 
+@clear.got("prompt")
+async def _(state: T_State, conf: str = ArgStr("prompt")):
+    if conf in proceed:
+        session = state["session"]
+        await bottle_manager.clear(session)
+        await session.commit()
+        await clear.finish("所有漂流瓶清空成功！")
+    else:
+        await clear.finish("取消清空操作。")
 
 @listqq.handle()
 async def _(
