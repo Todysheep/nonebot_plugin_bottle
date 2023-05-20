@@ -1,16 +1,15 @@
 import random
 import asyncio
 
-from nonebot.typing import T_State
 from nonebot.matcher import Matcher
 from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
-from nonebot.params import ArgStr, Depends, CommandArg
+from nonebot.params import Arg, ArgStr, Depends, CommandArg
 
 require("nonebot_plugin_datastore")
+from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from nonebot_plugin_datastore import get_session, create_session
 from nonebot.adapters.onebot.v11 import (
     GROUP,
     Bot,
@@ -109,8 +108,10 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
         await matcher.finish(ba.bannedMessage)
 
+
 # 信息初始化
-proceed = ["是", "Y", "Yes", "y", "yes"]
+proceed = set(["是", "Y", "Yes", "y", "yes"])
+
 
 @listb.handle()
 async def _(
@@ -404,7 +405,6 @@ async def _(
     bot: Bot,
     matcher: Matcher,
     event: GroupMessageEvent,
-    state: T_State,
     arg: Message = CommandArg(),
     session: AsyncSession = Depends(get_session),
 ):
@@ -412,21 +412,22 @@ async def _(
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
         content_preview = get_content_preview(bottle)
-        state["index"] = int(index)
+        matcher.set_arg("index", int(index))
         await remove.send(f"你是否要删除漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
     else:
         await remove.finish("删除失败！你没有相关的权限！")
 
 
 @remove.got("prompt")
-async def _(state: T_State, conf: str = ArgStr("prompt")):
+async def _(
+    conf: str = ArgStr("prompt"),
+    index: int = Arg("index"),
+    session: AsyncSession = Depends(get_session),
+):
     if conf in proceed:
-        index = state["index"]
-        async with create_session() as session:
-            # 前面验证了id合法性后这里就直接拿了，由于是不同的会话所以必须重新获取（大概）
-            bottle = await bottle_manager.get_bottle(index=index, session=session)
-            bottle.is_del = True
-            await session.commit()
+        # 行数越少越好.jpg
+        (await bottle_manager.get_bottle(index=index, session=session)).is_del = True
+        await session.commit()
         await remove.send(f"成功删除 {index} 号漂流瓶！")
     else:
         await remove.finish("取消删除操作。")
@@ -450,20 +451,15 @@ async def _(
     await resume.finish(f"成功恢复 {index} 号漂流瓶！")
 
 
-@clear.handle()
-async def _(session: AsyncSession = Depends(get_session), state: T_State):
-    state['session'] = session
-    await clear.send("你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）")
-
-@clear.got("prompt")
-async def _(state: T_State, conf: str = ArgStr("prompt")):
+@clear.got("prompt", prompt="你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）")
+async def _(conf: str = ArgStr("prompt"), session: AsyncSession = Depends(get_session)):
     if conf in proceed:
-        session = state["session"]
         await bottle_manager.clear(session)
         await session.commit()
         await clear.finish("所有漂流瓶清空成功！")
     else:
         await clear.finish("取消清空操作。")
+
 
 @listqq.handle()
 async def _(
