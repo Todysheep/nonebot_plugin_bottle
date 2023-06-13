@@ -53,6 +53,9 @@ SUPERUSER指令：
     漂流瓶黑名单 [QQ / 群聊] [QQ号 / 群号]
     漂流瓶详情 [漂流瓶编号]
 """.strip(),
+    type="application",
+    homepage="https://github.com/Todysheep/nonebot_plugin_bottle",
+    supported_adapters={"~onebot.v11"},
     extra={
         "unique_name": "nonebot_plugin_bottle",
         "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
