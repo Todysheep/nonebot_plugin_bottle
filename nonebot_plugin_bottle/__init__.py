@@ -172,22 +172,15 @@ async def _(
         await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
     ba.add("cooldown", event.user_id)
 
-
-@throw.handle()
-async def _(
+async def handle_bottle(
     bot: Bot,
     matcher: Matcher,
     event: GroupMessageEvent,
-    args: Message = CommandArg(),
-    session: AsyncSession = Depends(get_session),
+    args: Message,
+    session: AsyncSession
 ):
-    await verify(matcher=matcher, event=event)
-
-    if not args:
-        await throw.finish("想说些什么话呢？在指令后边写上吧！")
-
     message_text = args.extract_plain_text().strip()
-
+    print(message_text)
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
@@ -218,12 +211,37 @@ async def _(
         # 添加个人冷却
         ba.add("cooldown", event.user_id)
         await asyncio.sleep(2)
-        await throw.send(
+        await throw.finish(
             f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
         )
     else:
         await asyncio.sleep(2)
-        await throw.send("你的瓶子以奇怪的方式消失掉了！")
+        await throw.finish("你的瓶子以奇怪的方式消失掉了！")   
+
+@throw.handle()
+async def _(
+    bot: Bot,
+    matcher: Matcher,
+    event: GroupMessageEvent,
+    args: Message = CommandArg(),
+    session: AsyncSession = Depends(get_session),
+):
+    await verify(matcher=matcher, event=event)
+
+    if args:
+        await handle_bottle(bot, matcher, event, args, session)
+
+@throw.got("prompt", prompt="想说些什么话呢？在指令后边写上吧！")
+async def _(
+    bot: Bot,
+    matcher: Matcher,
+    event: GroupMessageEvent,
+    args: Message = Arg("prompt"),
+    session: AsyncSession = Depends(get_session),
+):
+    await verify(matcher=matcher, event=event)
+    if args:
+        await handle_bottle(bot, matcher, event, args, session)
 
 
 @get.handle()
@@ -455,7 +473,10 @@ async def _(
 
 
 @clear.got("prompt", prompt="你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）")
-async def _(conf: str = ArgStr("prompt"), session: AsyncSession = Depends(get_session)):
+async def _(
+    conf: str = ArgStr("prompt"),
+    session: AsyncSession = Depends(get_session),
+):
     if conf in proceed:
         await bottle_manager.clear(session)
         await session.commit()
