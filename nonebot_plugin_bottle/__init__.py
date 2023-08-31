@@ -175,17 +175,22 @@ async def _(
 
 @throw.handle()
 async def _(
-    bot: Bot,
     matcher: Matcher,
     event: GroupMessageEvent,
     args: Message = CommandArg(),
-    session: AsyncSession = Depends(get_session),
 ):
     await verify(matcher=matcher, event=event)
+    if args:
+        matcher.set_arg("content", args)
 
-    if not args:
-        await throw.finish("想说些什么话呢？在指令后边写上吧！")
 
+@throw.got("content", prompt="想说些什么话呢？")
+async def _(
+    bot: Bot,
+    event: GroupMessageEvent,
+    args: Message = Arg("content"),
+    session: AsyncSession = Depends(get_session),
+):
     message_text = args.extract_plain_text().strip()
 
     audit = await text_audit(text=message_text)
