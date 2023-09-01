@@ -114,6 +114,7 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 
 # 信息初始化
 proceed = set(["是", "Y", "Yes", "y", "yes"])
+cancel = set(["取消", "cancel"])
 
 
 @listb.handle()
@@ -180,55 +181,61 @@ async def _(
     args: Message = CommandArg(),
 ):
     await verify(matcher=matcher, event=event)
+    global cmdarg_content
+    cmdarg_content = ""
     if args:
+        cmdarg_content = args.extract_plain_text().strip()
         matcher.set_arg("content", args)
 
 
-@throw.got("content", prompt="想说些什么话呢？")
+@throw.got("content", prompt="请问您要投掷什么呢？（输入“取消”来取消扔漂流瓶操作。）")
 async def _(
     bot: Bot,
     event: GroupMessageEvent,
     args: Message = Arg("content"),
     session: AsyncSession = Depends(get_session),
 ):
+    global cmdarg_content
     message_text = args.extract_plain_text().strip()
-
-    audit = await text_audit(text=message_text)
-    if not audit == "pass":
-        if audit == "Error":
-            await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！")
-        elif audit["conclusion"] == "不合规":
-            await throw.finish("文字审核未通过！原因：" + audit["data"][0]["msg"])
-
-    try:
-        group_info = await bot.get_group_info(group_id=event.group_id)
-        group_name = group_info["group_name"]
-    except:
-        group_name = "Unknown"
-    user_info = await bot.get_group_member_info(
-        group_id=event.group_id, user_id=event.user_id
-    )
-    user_name = user_info.get("card") or user_info.get("nickname")
-
-    add_index = await bottle_manager.add_bottle(
-        user_id=event.user_id,
-        group_id=event.group_id,
-        content=await serialize_message(message=args),
-        user_name=user_name,
-        group_name=group_name,
-        session=session,
-    )
-    await session.commit()
-    if add_index:
-        # 添加个人冷却
-        ba.add("cooldown", event.user_id)
-        await asyncio.sleep(2)
-        await throw.send(
-            f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
-        )
+    if str(message_text) != str(cmdarg_content) and message_text in cancel:
+        await throw.finish("已取消扔漂流瓶操作。")
     else:
-        await asyncio.sleep(2)
-        await throw.send("你的瓶子以奇怪的方式消失掉了！")
+        cmdarg_content = ""
+        audit = await text_audit(text=message_text)
+        if not audit == "pass":
+            if audit == "Error":
+                await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！")
+            elif audit["conclusion"] == "不合规":
+                await throw.finish("文字审核未通过！原因：" + audit["data"][0]["msg"])
+        try:
+            group_info = await bot.get_group_info(group_id=event.group_id)
+            group_name = group_info["group_name"]
+        except:
+            group_name = "Unknown"
+        user_info = await bot.get_group_member_info(
+            group_id=event.group_id, user_id=event.user_id
+        )
+        user_name = user_info.get("card") or user_info.get("nickname")
+
+        add_index = await bottle_manager.add_bottle(
+            user_id=event.user_id,
+            group_id=event.group_id,
+            content=await serialize_message(message=args),
+            user_name=user_name,
+            group_name=group_name,
+            session=session,
+        )
+        await session.commit()
+        if add_index:
+            # 添加个人冷却
+            ba.add("cooldown", event.user_id)
+            await asyncio.sleep(2)
+            await throw.send(
+                f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
+            )
+        else:
+            await asyncio.sleep(2)
+            await throw.send("你的瓶子以奇怪的方式消失掉了！")
 
 
 @get.handle()
