@@ -1,6 +1,7 @@
 import random
 import asyncio
 
+from nonebot.typing import T_State
 from nonebot.matcher import Matcher
 from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
@@ -114,6 +115,7 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 
 # 信息初始化
 proceed = set(["是", "Y", "Yes", "y", "yes"])
+cancel = set(["取消", "cancel"])
 
 
 @listb.handle()
@@ -182,16 +184,21 @@ async def _(
     await verify(matcher=matcher, event=event)
     if args:
         matcher.set_arg("content", args)
+        matcher.set_arg("__has_content__", True)
 
 
-@throw.got("content", prompt="想说些什么话呢？")
+@throw.got("content", prompt="在漂流瓶中要写下什么呢？（输入“取消”来取消扔漂流瓶操作。）")
 async def _(
     bot: Bot,
+    state: T_State,
     event: GroupMessageEvent,
     args: Message = Arg("content"),
     session: AsyncSession = Depends(get_session),
 ):
     message_text = args.extract_plain_text().strip()
+
+    if "__has_content__" not in state and message_text in cancel:
+        await throw.finish("已取消扔漂流瓶操作。")
 
     audit = await text_audit(text=message_text)
     if not audit == "pass":
