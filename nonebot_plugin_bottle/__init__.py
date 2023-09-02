@@ -287,7 +287,7 @@ async def _(
     ba.add("cooldown", event.user_id)
     await get.send(
         MessageSegment.reply(message_id)
-        + f"【漂流瓶No.{bottle.id}】\n来自群：【{group_name}】的“{user_name}”！\n"
+        + f"【漂流瓶No.{bottle.id}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + deserialize_message(bottle.content)
