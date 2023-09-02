@@ -187,7 +187,7 @@ async def _(
         matcher.set_arg("__has_content__", True)
 
 
-@throw.got("content", prompt="想说些什么话呢？")
+@throw.got("content", prompt="在漂流瓶中要写下什么呢？（输入“取消”来取消扔漂流瓶操作。）")
 async def _(
     bot: Bot,
     state: T_State,
