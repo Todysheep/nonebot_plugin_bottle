@@ -204,14 +204,14 @@ async def _(
 
     if maxlen != 0 and ((msg_len := len(message_text)) > maxlen):
         await throw.finish(
-            MessageSegment.reply(message_id)+
+            MessageSegment.reply(message_id)
             + f"您漂流瓶中的字符数量超过了最大字符限制：{maxlen}。您可以尝试减少漂流瓶内容。\n当前字符数量：{msg_len}"
         )
         ba.add("cooldown", event.user_id)
     if maxrt != 0 and ((rt_cnt := message_text.count("\n")) > maxrt):
         await throw.finish(
-            MessageSegment.reply(message_id)+
-            f"您漂流瓶中的换行数量超过了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
+            MessageSegment.reply(message_id)
+            + f"您漂流瓶中的换行数量超过了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
         )
         ba.add("cooldown", event.user_id)
     audit = await text_audit(text=message_text)
