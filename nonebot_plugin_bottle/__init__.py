@@ -110,7 +110,7 @@ async def get_bottle(
 
 async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
-        await matcher.finish(ba.bannedMessage)
+        await matcher.finish(ba.bannedMessage if ba.bannedMessage.strip() else None)
 
 
 # 信息初始化
@@ -187,7 +187,7 @@ async def _(
         matcher.set_arg("__has_content__", True)
 
 
-@throw.got("content", prompt="在漂流瓶中要写下什么呢？（输入“取消”来取消扔漂流瓶操作。）")
+@throw.got("content", prompt="想说些什么话呢？")
 async def _(
     bot: Bot,
     state: T_State,
