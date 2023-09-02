@@ -3,7 +3,7 @@ import asyncio
 
 from nonebot.typing import T_State
 from nonebot.matcher import Matcher
-from nonebot import require, on_command
+from nonebot import require, on_command, get_driver
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
 from nonebot.params import Arg, ArgStr, Depends, CommandArg
@@ -64,6 +64,8 @@ SUPERUSER指令：
         "version": "1.0.0",
     },
 )
+
+plugin_config = Config.parse_obj(get_driver().config)
 
 throw = on_command(
     "扔漂流瓶", aliases=set(["寄漂流瓶", "丢漂流瓶"]), permission=GROUP, priority=100, block=True
@@ -200,6 +202,8 @@ async def _(
     if "__has_content__" not in state and message_text in cancel:
         await throw.finish("已取消扔漂流瓶操作。")
 
+    if len(message_text) > plugin_config.nonebot_plugin_bottle_max_length and plugin_config.nonebot_plugin_bottle_max_length != 0:
+        await throw.finish("您的漂流瓶内容超出所设置的最大字符限制："+str(plugin_config.nonebot_plugin_bottle_max_length))
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
