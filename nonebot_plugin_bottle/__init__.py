@@ -279,7 +279,9 @@ async def _(
     )
     ba.add("cooldown", event.user_id)
     await get.send(
-        f"【漂流瓶No.{bottle.id}|被捡到{bottle.picked}次】来自【{group_name}】的 {user_name} ！\n"
+        f"【No.{bottle.id}号漂流瓶】\n来自【{group_name}】的 {user_name} ！\n"
+        + f"投掷时间：{bottle.time.strftime('%Y-%m-%d')}"
+        + f"内容：\n"
         + deserialize_message(bottle.content)
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
     )
