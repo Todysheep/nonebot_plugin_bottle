@@ -114,7 +114,7 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 
 
 # 信息初始化
-proceed = set(["是", "Y", "Yes", "y", "yes"])
+proceed = set(["是", "对", "Y", "Yes", "y", "yes"])
 cancel = set(["取消", "cancel"])
 
 
@@ -197,25 +197,29 @@ async def _(
 ):
     message_text = args.extract_plain_text().strip()
 
+    message_id = event.message_id
+
     if "__has_content__" not in state and message_text in cancel:
-        await throw.finish("已取消扔漂流瓶操作。")
+        await throw.finish(MessageSegment.reply(message_id)+"已取消扔漂流瓶操作。")
 
     if maxlen != 0 and ((msg_len := len(message_text)) > maxlen):
         await throw.finish(
-            f"您漂流瓶的内容中，字符数量超出最大字符限制：{maxlen}。您可以尝试减少漂流瓶内容。\n当前字符数量：{msg_len}"
+            MessageSegment.reply(message_id)+
+            + f"您漂流瓶中的字符数量超过了最大字符限制：{maxlen}。您可以尝试减少漂流瓶内容。\n当前字符数量：{msg_len}"
         )
         ba.add("cooldown", event.user_id)
     if maxrt != 0 and ((rt_cnt := message_text.count("\n")) > maxrt):
         await throw.finish(
-            f"您漂流瓶的内容中，换行数量超出了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
+            MessageSegment.reply(message_id)+
+            f"您漂流瓶中的换行数量超过了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
         )
         ba.add("cooldown", event.user_id)
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
-            await throw.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！")
+            await throw.finish(MessageSegment.reply(message_id)+"文字审核未通过！原因：调用审核API失败，请检查违禁词词表是否存在，或token是否正确设置！")
         elif audit["conclusion"] == "不合规":
-            await throw.finish("文字审核未通过！原因：" + audit["data"][0]["msg"])
+            await throw.finish(MessageSegment.reply(message_id)+"文字审核未通过！原因：" + audit["data"][0]["msg"])
 
     try:
         group_info = await bot.get_group_info(group_id=event.group_id)
@@ -241,7 +245,8 @@ async def _(
         ba.add("cooldown", event.user_id)
         await asyncio.sleep(2)
         await throw.send(
-            f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
+            MessageSegment.reply(message_id)
+            + f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
         )
     else:
         await asyncio.sleep(2)
@@ -272,6 +277,8 @@ async def _(
         group_name = group_info["group_name"]
     except ActionFailed:
         group_name = bottle.group_name
+    
+    message_id = event.message_id
 
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
     comment_str = "\n".join(
@@ -279,8 +286,9 @@ async def _(
     )
     ba.add("cooldown", event.user_id)
     await get.send(
-        f"【No.{bottle.id}号漂流瓶】\n来自【{group_name}】的 {user_name} ！\n"
-        + f"投掷时间：{bottle.time.strftime('%Y-%m-%d')}"
+        MessageSegment.reply(message_id)
+        + f"【漂流瓶No.{bottle.id}】\n来自群：【{group_name}】的“{user_name}”！\n"
+        + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + deserialize_message(bottle.content)
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
@@ -330,9 +338,9 @@ async def _(
             await bot.send_private_msg(user_id=i, message=mes)
             await bot.send_private_msg(user_id=i, message=comment_str)
             await asyncio.sleep(0.5)
-        await report.send("举报成功！已经进行删除该漂流瓶处理！")
+        await report.send("举报成功！该漂流瓶已沉底。")
     elif result == 3:
-        await report.send("该漂流瓶已经被删除！")
+        await report.send("该漂流瓶已经被删除。")
 
 
 @comment.handle()
@@ -346,10 +354,11 @@ async def _(
     await verify(matcher=matcher, event=event)
 
     command = args.extract_plain_text().strip().split()
+    message_id = event.message_id
     if not command:
-        await comment.finish(f"请在指令后接 漂流瓶id 评论")
+        await comment.finish(MessageSegment.reply(message_id)+f"请在指令后接 漂流瓶id 评论")
     if len(command) == 1:
-        await comment.finish("想评论什么呀，在后边写上吧！")
+        await comment.finish(MessageSegment.reply(message_id)+"想评论什么呀，在后边写上吧！")
     bottle = await get_bottle(index=command[0], matcher=matcher, session=session)
     user_info = await bot.get_group_member_info(
         group_id=event.group_id, user_id=event.user_id
@@ -361,9 +370,9 @@ async def _(
     audit = await text_audit(text=command[1])
     if not audit == "pass":
         if audit == "Error":
-            await comment.finish("文字审核未通过！原因：调用审核API失败，请检查违禁词词表格式是否正确，或token是否正确设置！")
+            await comment.finish(MessageSegment.reply(message_id)+"文字审核未通过！原因：调用审核API失败，请检查违禁词词表格式是否正确，或token是否正确设置！")
         elif audit["conclusion"] == "不合规":
-            await comment.finish("文字审核未通过！原因：" + audit["data"][0]["msg"])
+            await comment.finish(MessageSegment.reply(message_id)+"文字审核未通过！原因：" + audit["data"][0]["msg"])
 
     # 审核通过
     bottle_manager.comment(
@@ -412,16 +421,19 @@ async def _(
     except ActionFailed:
         group_name = bottle.group_name
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
+    message_id = event.message_id
     if not comments and event.user_id != bottle.user_id:
         await check_bottle.finish(
-            f"这个编号的漂流瓶还没有评论或你不是此漂流瓶的主人，不能给你看里面的东西！\n【该#{index} 漂流瓶来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+            MessageSegment.reply(message_id)
+            + f"这个编号的漂流瓶还没有评论或你不是此漂流瓶的主人，不能给你看里面的东西！\n【该#{index} 漂流瓶来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
     ba.add("cooldown", event.user_id)
     await check_bottle.finish(
-        f"来自【{group_name}】的 {user_name} 的第{index}号漂流瓶：\n"
+        MessageSegment.reply(message_id)
+        + f"来自【{group_name}】的 {user_name} 的第{index}号漂流瓶：\n"
         + deserialize_message(bottle.content)
         + f"\n★前 {len(comments)} 条评论★\n{comment_str}\n【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
     )
@@ -437,27 +449,30 @@ async def _(
 ):
     index = arg.extract_plain_text().strip()
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
+    message_id = event.message_id
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
         content_preview = get_content_preview(bottle)
         matcher.set_arg("index", int(index))
-        await remove.send(f"你是否要删除漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
+        await remove.send(MessageSegment.reply(message_id)+f"真的要删除{index}号漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}")
     else:
-        await remove.finish("删除失败！你没有相关的权限！")
+        await remove.finish(MessageSegment.reply(message_id)+"删除失败！你没有相关的权限！")
 
 
 @remove.got("prompt")
 async def _(
+    event: GroupMessageEvent,
     conf: str = ArgStr("prompt"),
     index: int = Arg("index"),
     session: AsyncSession = Depends(get_session),
 ):
+    message_id = event.message_id
     if conf in proceed:
         # 行数越少越好.jpg
         (await bottle_manager.get_bottle(index=index, session=session)).is_del = True
         await session.commit()
-        await remove.send(f"成功删除 {index} 号漂流瓶！")
+        await remove.send(MessageSegment.reply(message_id)+f"成功删除 {index} 号漂流瓶！")
     else:
-        await remove.finish("取消删除操作。")
+        await remove.finish(MessageSegment.reply(message_id)+"取消删除操作。")
 
 
 ###### SUPERUSER命令 ######
