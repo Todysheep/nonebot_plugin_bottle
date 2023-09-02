@@ -200,11 +200,15 @@ async def _(
     if "__has_content__" not in state and message_text in cancel:
         await throw.finish("已取消扔漂流瓶操作。")
 
-    if maxlen != 0 and len(message_text) > maxlen:
-        await throw.finish("您漂流瓶的内容中，字符数量超出最大字符限制："+str(maxlen)+"。您可以尝试减少漂流瓶内容。\n当前字符数量："+len(message_text))
+    if maxlen != 0 and ((msg_len := len(message_text)) > maxlen):
+        await throw.finish(
+            f"您漂流瓶的内容中，字符数量超出最大字符限制：{maxlen}。您可以尝试减少漂流瓶内容。\n当前字符数量：{msg_len}"
+        )
         ba.add("cooldown", event.user_id)
-    if maxrt != 0 and message_text.count('\n') > maxrt:
-        await throw.finish("您漂流瓶的内容中，换行数量超出了最大换行限制。您可尝试减少换行数量。\n当前换行数量："+message_text.count('\n'))
+    if maxrt != 0 and ((rt_cnt := message_text.count("\n")) > maxrt):
+        await throw.finish(
+            f"您漂流瓶的内容中，换行数量超出了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
+        )
         ba.add("cooldown", event.user_id)
     audit = await text_audit(text=message_text)
     if not audit == "pass":
