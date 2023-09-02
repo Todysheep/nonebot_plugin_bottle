@@ -43,10 +43,15 @@
 - `功能冷却`：插件默认 30 秒冷却，可在`data/bottle/permissionsList.json`中修改`cooldownTime`值  
 - 白名单优先级高于黑名单和冷却名单
 
-## 最大字符数量配置
+## 最大字符数量和换行数量配置
+### 最大字符数量
 - 最大字符数量配置用于限制漂流瓶最大可投掷的字数。
 - 使用`len()`函数，所有汉字、英文字母、空格均被算作1。
-- 设置为0，则不限制字符数量。默认设置为0。
+- 该配置项设置为0时不限制字符数量。默认设置为0。
+### 最大换行数量
+- 最大换行数量，代表漂流瓶内容最大可拥有换行的数量。
+- 可防止用户不断换行，没有触发最大字符数量限制，但是还会刷屏。
+- 该配置项设置为0时不限制换行数量。默认设置为0。
 
 ## 文字审核API配置（可选`百度审核`或`简单屏蔽词审核`）
 - 百度审核
@@ -71,6 +76,7 @@
 | SECRET KEY | nonebot_plugin_bottle_secret_key | str | "" |
 | 是否缓存图片 | nonebot_plugin_bottle_local_storage | bool | True |
 | 漂流瓶最大字符数量 | nonebot_plugin_bottle_max_length | int | 0 |
+| 漂流瓶最大换行数量 | nonebot_plugin_bottle_max_return | int | 0 |
 
 
 ## 更新日志

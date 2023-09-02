@@ -11,6 +11,8 @@ class Config(BaseModel, extra=Extra.ignore):
     nonebot_plugin_bottle_local_storage: bool = True
     # 瓶子最大字符数量
     nonebot_plugin_bottle_max_length: int = 0
+    # 最大换行数量
+    nonebot_plugin_bottle_max_return: int = 0
 
 
 config = Config.parse_obj(get_driver().config.dict())
@@ -18,3 +20,4 @@ api_key = config.nonebot_plugin_bottle_api_key
 secret_key = config.nonebot_plugin_bottle_secret_key
 local_storage = config.nonebot_plugin_bottle_local_storage
 maxlen = config.nonebot_plugin_bottle_max_length
+maxrt = config.nonebot_plugin_bottle_max_return

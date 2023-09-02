@@ -3,7 +3,7 @@ import asyncio
 
 from nonebot.typing import T_State
 from nonebot.matcher import Matcher
-from nonebot import require, on_command, get_driver
+from nonebot import require, on_command
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
 from nonebot.params import Arg, ArgStr, Depends, CommandArg
@@ -22,7 +22,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 from .model import Bottle
-from .config import Config, maxlen
+from .config import Config, maxlen, maxrt
 from .data_source import (
     ba,
     text_audit,
@@ -201,7 +201,11 @@ async def _(
         await throw.finish("已取消扔漂流瓶操作。")
 
     if len(message_text) > maxlen and maxlen != 0:
-        await throw.finish("您的漂流瓶内容超出所设置的最大字符限制："+str(maxlen))
+        await throw.finish("您漂流瓶的内容中，字符数量超出最大字符限制："+str(maxlen)+"。您可以尝试减少漂流瓶内容。\n当前字符数量："+len(message_text))
+        ba.add("cooldown", event.user_id)
+    if message_text.count('\n') > maxrt and maxrt != 0:
+        await throw.finish("您漂流瓶的内容中，换行数量超出了最大换行限制。您可尝试减少换行数量。\n当前换行数量："+message_text.count('\n'))
+        ba.add("cooldown", event.user_id)
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
