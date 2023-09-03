@@ -22,7 +22,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 from .model import Bottle
-from .config import Config, maxlen, maxrt
+from .config import Config, maxlen, maxrt, rtrate
 from .data_source import (
     ba,
     text_audit,
@@ -199,6 +199,8 @@ async def _(
 
     message_id = event.message_id
 
+    ba.add("cooldown", event.user_id)
+
     if "__has_content__" not in state and message_text in cancel:
         await throw.finish(MessageSegment.reply(message_id)+"已取消扔漂流瓶操作。")
 
@@ -207,13 +209,17 @@ async def _(
             MessageSegment.reply(message_id)
             + f"您漂流瓶中的字符数量超过了最大字符限制：{maxlen}。您可以尝试减少漂流瓶内容。\n当前字符数量：{msg_len}"
         )
-        ba.add("cooldown", event.user_id)
     if maxrt != 0 and ((rt_cnt := message_text.count("\n")) > maxrt):
         await throw.finish(
             MessageSegment.reply(message_id)
             + f"您漂流瓶中的换行数量超过了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
         )
-        ba.add("cooldown", event.user_id)
+    else:
+        if rtrate != 0 and (msg_len / rt_cnt) <= rtrate:
+            await throw.finish(
+                MessageSegment.reply(message_id)
+                + f"您漂流瓶中的字符换行比率超过了最大字符换行比率限制。\n字符换行比率，是您发送的漂流瓶总字符数量和换行的比值。为了防止刷屏，请您尝试减少漂流瓶的换行数量或增加有意义漂流瓶字符。"
+            )
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
@@ -287,7 +293,7 @@ async def _(
     ba.add("cooldown", event.user_id)
     await get.send(
         MessageSegment.reply(message_id)
-        + f"【漂流瓶No.{bottle.id}】\n来自群：【{group_name}】的“{user_name}”！\n"
+        + f"【漂流瓶No.{bottle.id}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + deserialize_message(bottle.content)
