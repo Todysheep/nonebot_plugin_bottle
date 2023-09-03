@@ -59,6 +59,8 @@
 - 例如我发了一个字符数量有100的文本，同时拥有10个换行。那么我需要将该配置设置为10和10以下的数字来允许这个漂流瓶内容被发出。
 - 该配置项设置为0时不限制字符换行比率。默认设置为0，推荐设置为9以上的数值。
 - 效果图如下（效果图中，该配置项为10）
+![89fbe85ef97f9fe7d87b7526462e62cc](https://github.com/Sevenyine/nonebot_plugin_bottle/assets/65720409/7be1ec95-4ae7-4c08-a14b-4bdc72782093)
+![69ca733b21ad6c38052fe1e6a9136b92](https://github.com/Sevenyine/nonebot_plugin_bottle/assets/65720409/86a9eaa1-194e-42da-b039-b74203ebabf4)
 
 
 ## 文字审核API配置（可选`百度审核`或`简单屏蔽词审核`）
@@ -85,6 +87,7 @@
 | 是否缓存图片 | nonebot_plugin_bottle_local_storage | bool | True |
 | 漂流瓶最大字符数量 | nonebot_plugin_bottle_max_length | int | 0 |
 | 漂流瓶最大换行数量 | nonebot_plugin_bottle_max_return | int | 0 |
+| 漂流瓶字符换行比率 | nonebot_plugin_bottle_rt_rate | int | 0 |
 
 
 ## 更新日志
