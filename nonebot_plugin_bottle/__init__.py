@@ -214,12 +214,11 @@ async def _(
             MessageSegment.reply(message_id)
             + f"您漂流瓶中的换行数量超过了最大换行限制：{maxrt}。您可尝试减少换行数量。\n当前换行数量：{rt_cnt}"
         )
-    else:
-        if rtrate != 0 and (msg_len / rt_cnt) <= rtrate:
-            await throw.finish(
-                MessageSegment.reply(message_id)
-                + f"您漂流瓶中的字符换行比率超过了最大字符换行比率限制。\n字符换行比率，是您发送的漂流瓶总字符数量和换行的比值。为了防止刷屏，请您尝试减少漂流瓶的换行数量或增加有意义漂流瓶字符。"
-            )
+    if rtrate != 0 and (msg_len / rt_cnt) <= rtrate:
+        await throw.finish(
+            MessageSegment.reply(message_id)
+            + "您漂流瓶中的字符换行比率超过了最大字符换行比率限制。\n字符换行比率，是您发送的漂流瓶总字符数量和换行的比值。为了防止刷屏，请您尝试减少漂流瓶的换行数量或增加有意义漂流瓶字符。"
+        )
     audit = await text_audit(text=message_text)
     if not audit == "pass":
         if audit == "Error":
