@@ -282,22 +282,34 @@ async def _(
         group_name = group_info["group_name"]
     except ActionFailed:
         group_name = bottle.group_name
-    
-    message_id = event.message_id
 
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
     ba.add("cooldown", event.user_id)
-    await get.send(
-        MessageSegment.reply(message_id)
-        + f"【漂流瓶No.{bottle.id}】\n来自【{group_name}】的“{user_name}”！\n"
-        + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
-        + f"内容：\n"
-        + deserialize_message(bottle.content)
+    bottle_content = deserialize_message(bottle.content).extract_plain_text().strip()
+    bottle_message = f"【漂流瓶No.{bottle.id}】\n来自【{group_name}】的“{user_name}”！\n"\
+        + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"\
+        + f"内容：\n"\
+        + deserialize_message(bottle.content)\
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
-    )
+    
+    if bottle_content.count("\n") >=7 or len(bottle_content)>200:
+        await bot.send_group_forward_msg(
+            group_id=event.group_id,
+            messages=[
+                MessageSegment.node_custom(
+                    user_id=event.self_id, nickname="bottle", content=bottle_message
+                )
+            ],
+        )
+    else:
+        message_id = event.message_id
+        await get.send(
+            MessageSegment.reply(message_id)
+            + bottle_message
+        )
     await session.commit()
 
 
