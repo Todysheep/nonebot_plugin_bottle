@@ -107,10 +107,6 @@ async def get_bottle(
         await matcher.finish("该漂流瓶不存在或已被删除！")
     return bottle
 
-def split_message(
-    s, length=300
-):
-    return [s[i:i+length] for i in range(0, len(s), length)]
 
 async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
     if not ba.verify(event.user_id, event.group_id):
@@ -298,14 +294,14 @@ async def _(
         + f"内容：\n"\
         + deserialize_message(bottle.content)\
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
+    
     if bottle_content.count("\n") >=7 or len(bottle_content)>200:
         await bot.send_group_forward_msg(
             group_id=event.group_id,
             messages=[
                 MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="bottle", content=msg
+                    user_id=event.self_id, nickname="bottle", content=bottle_message
                 )
-                for msg in split_message(bottle_message,300)
             ],
         )
     else:

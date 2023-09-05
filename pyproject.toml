@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot_plugin_bottle"
-version = "1.0.2.2"
+version = "1.0.2.3"
 description = "Bottle post plugin in Nonebot"
 authors = ["Todysheep <todysheep@163.com>"]
 license = "GNU GPLv3"
