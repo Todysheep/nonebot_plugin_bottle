@@ -107,7 +107,7 @@ async def get_bottle(
         await matcher.finish("该漂流瓶不存在或已被删除！")
     return bottle
 
-async def split_message(
+def split_message(
     s, length=300
 ):
     return [s[i:i+length] for i in range(0, len(s), length)]
