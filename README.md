@@ -1,7 +1,7 @@
 # Nonebot 漂流瓶插件
 > **注意**
 >
-> 升级到2.0.0版本后建议请先运行`nb datastore upgrade`命令（需要[nb_cli](https://github.com/nonebot/nb-cli))。
+> 2023年10月22日，本插件推送了2.0.0版本。建议在升级2.0.0版本前，先运行`nb datastore upgrade`命令（需要[nb_cli](https://github.com/nonebot/nb-cli))。
 > 
 ## 安装
 - 使用 `pip install nonebot_plugin_bottle`
@@ -26,7 +26,7 @@
 ## 功能须知
 - 所有用户：
     - `扔漂流瓶`指令无字数限制，如需要可在代码中修改。若只说了扔漂流瓶，则插件将会监听用户的下一条消息。
-    - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复
+    - `捡漂流瓶`若捡到的漂流瓶存在回复，则会显示最近三条(默认)，使用`查看漂流瓶`查看所有回复，捡漂流瓶后发送`+`可以点赞漂流瓶。
     - `查看漂流瓶`为保证随机性，无评论时不展示漂流瓶内容，可在代码中修改。漂流瓶的发送者可以通过本指令查看内容，无论有无评论。
     - `评论漂流瓶`评论内容将通过该瓶子扔出的方式告诉扔出瓶子的人
     - `举报漂流瓶`五次(默认)后将自动删除，举报成功后会私聊SUPERUSER漂流瓶详情内容
@@ -85,7 +85,7 @@
 ## 配置文件（.env.*）
 
 | 配置项 | 配置名 | 变量类型 |  默认值 |
-|:--------|:----------|:-------------:|------:|
+|:--------|:----------|:-------------:|:------:|
 | API KEY | nonebot_plugin_bottle_api_key | str | "" |
 | SECRET KEY | nonebot_plugin_bottle_secret_key | str | "" |
 | 是否缓存图片 | nonebot_plugin_bottle_local_storage | bool | True |
@@ -95,6 +95,9 @@
 
 
 ## 更新日志
+- 2.0.0 [2023-10-22] [#58](https://github.com/Todysheep/nonebot_plugin_bottle/pull/58)
+    - 添加漂流瓶点赞功能
+    - 格式化代码
 - ***重构版本*** 1.0.0 [2023-3-10] [#32](https://github.com/Todysheep/nonebot_plugin_bottle/issues/32) [@LambdaYH](https://github.com/LambdaYH)
     - 使用`nonebot_plugin_datastore`重构
     - 异步读取违禁词文件
