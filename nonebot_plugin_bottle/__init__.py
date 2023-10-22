@@ -17,7 +17,6 @@ from nonebot.adapters.onebot.v11 import (
     Bot,
     Message,
     ActionFailed,
-    MessageEvent,
     MessageSegment,
     GroupMessageEvent,
 )
@@ -42,9 +41,10 @@ __plugin_meta__ = PluginMetadata(
     扔漂流瓶 [文本/图片]
     寄漂流瓶 [文本/图片] （同扔漂流瓶，防止指令冲突用）
     捡漂流瓶
+    查看漂流瓶 [漂流瓶编号]
+    点赞漂流瓶 [漂流瓶编号]
     评论漂流瓶 [漂流瓶编号] [文本]
     举报漂流瓶 [漂流瓶编号]
-    查看漂流瓶 [漂流瓶编号]
     删除漂流瓶 [漂流瓶编号]
     我的漂流瓶
 SUPERUSER指令：
@@ -62,7 +62,7 @@ SUPERUSER指令：
         "unique_name": "nonebot_plugin_bottle",
         "example": "扔漂流瓶\n寄漂流瓶\n捡漂流瓶\n评论漂流瓶\n举报漂流瓶\n查看漂流瓶\n删除漂流瓶",
         "author": "Todysheep",
-        "version": "2.0.0",
+        "version": "2.0.1",
     },
 )
 
@@ -75,6 +75,7 @@ comment = on_command("评论漂流瓶", priority=100, block=True)
 check_bottle = on_command("查看漂流瓶", priority=100, block=True)
 remove = on_command("删除漂流瓶", priority=100, block=True)
 listb = on_command("我的漂流瓶", priority=100, block=True)
+like = on_command("点赞漂流瓶", priority=100, block=True)
 
 resume = on_command("恢复漂流瓶", permission=SUPERUSER, priority=100, block=True)
 clear = on_command("清空漂流瓶", permission=SUPERUSER, priority=100, block=True)
@@ -117,63 +118,6 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 # 信息初始化
 proceed = set(["是", "对", "Y", "Yes", "y", "yes"])
 cancel = set(["取消", "cancel"])
-
-
-@listb.handle()
-async def _(
-    bot: Bot, event: GroupMessageEvent, session: AsyncSession = Depends(get_session)
-):
-    bottles = await bottle_manager.list_bottles(
-        user_id=event.user_id, session=session, include_del=False
-    )
-    if not bottles:
-        await listb.finish("你还没有扔过漂流瓶哦～")
-
-    # 获取漂流瓶预览内容
-    bottles_info = []
-    for bottle in bottles:
-        content_preview = get_content_preview(bottle)
-        bottles_info.append(f"#{bottle.id}【+{bottle.like}】：{content_preview}")
-
-    # 整理消息
-    messages = []
-    total_bottles_info = f"您总共扔了{len(bottles_info)}个漂流瓶～\n"
-    if len(bottles_info) > 10:
-        i = 1
-        while len(bottles_info) > 10:
-            messages.append(
-                total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】"
-            )
-            bottles_info = bottles_info[10:]
-            i = i + 1
-        messages.append(
-            total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页-完】"
-        )
-
-        # 发送合并转发消息
-        if isinstance(event, GroupMessageEvent):
-            await bot.send_group_forward_msg(
-                group_id=event.group_id,
-                messages=[
-                    MessageSegment.node_custom(
-                        user_id=event.self_id, nickname="bottle", content=msg
-                    )
-                    for msg in messages
-                ],
-            )
-        else:
-            await bot.send_private_forward_msg(
-                user_id=event.user_id,
-                messages=[
-                    MessageSegment.node_custom(
-                        user_id=event.self_id, nickname="bottle", content=msg
-                    )
-                    for msg in messages
-                ],
-            )
-    else:
-        await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
-    ba.add("cooldown", event.user_id)
 
 
 @throw.handle()
@@ -311,10 +255,10 @@ async def _(
 
     if bottle_content.count("\n") >= 7 or len(bottle_content) > 200:
         await bot.send_group_forward_msg(
-            group_id=event.group_id,
+            group_id = event.group_id,
             messages=[
                 MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="bottle", content=bottle_message
+                    user_id = event.self_id, nickname = "Bottle", content = bottle_message
                 )
             ],
         )
@@ -347,6 +291,25 @@ async def _(
     else:
         matcher.block = False
 
+@like.handle()
+async def _(
+    matcher: Matcher,
+    event: GroupMessageEvent,
+    args: Message = CommandArg(),
+    session: AsyncSession = Depends(get_session),
+):
+    index = args.extract_plain_text().strip()
+    bottle = await get_bottle(index=index, matcher=matcher, session=session)
+    result = await bottle_manager.like_bottle(
+            bottle=bottle, user_id=event.user_id, session=session
+    )
+    if result == 0:
+        await like.send("你已经点过赞了。")
+    elif result == 1:
+        ba.add("cooldown", event.user_id)
+        await like.send(f"点赞成功～该漂流瓶已有 {bottle.like} 次点赞！")
+        await session.commit()
+    
 
 @report.handle()
 async def _(
@@ -456,10 +419,11 @@ async def _(
     await session.commit()
 
 
+# 查看漂流瓶
 @check_bottle.handle()
 async def _(
     bot: Bot,
-    event: MessageEvent,
+    event: GroupMessageEvent,
     matcher: Matcher,
     args: Message = CommandArg(),
     session: AsyncSession = Depends(get_session),
@@ -484,18 +448,35 @@ async def _(
     if not comments and event.user_id != bottle.user_id:
         await check_bottle.finish(
             MessageSegment.reply(message_id)
-            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该#{index} 漂流瓶(+{bottle.like})来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该漂流瓶(+{bottle.like})来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
+    
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
+    comment_all = f"★前 {len(comments)} 条评论★\n{comment_str}\n" if comments else ""
     ba.add("cooldown", event.user_id)
-    await check_bottle.finish(
+    check_msg = (
         MessageSegment.reply(message_id)
-        + f"来自【{group_name}】的 {user_name} 的第{index}号漂流瓶：\n"
+        + f"#{bottle.id}(+{bottle.like})：来自【{group_name}】的 {user_name}\n"
         + deserialize_message(bottle.content)
-        + f"\n★前 {len(comments)} 条评论★\n{comment_str}\n【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
-    )
+        + f"\n\n" + comment_all
+        + f"【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+        )
+    
+    if check_msg.count("\n") >= 7 or len(str(check_msg)) > 230:
+        await bot.send_group_forward_msg(
+            group_id = event.group_id,
+            messages=[
+                MessageSegment.node_custom(
+                    user_id = event.self_id, nickname = "Bottle", content = check_msg
+                )
+            ],
+        )
+    else:
+        message_id = event.message_id
+        await check_bottle.finish(MessageSegment.reply(message_id) + check_msg)
+
 
 
 @remove.handle()
@@ -537,6 +518,53 @@ async def _(
         await remove.finish(MessageSegment.reply(message_id) + "取消删除操作。")
 
 
+@listb.handle()
+async def _(
+    bot: Bot, event: GroupMessageEvent, session: AsyncSession = Depends(get_session)
+):
+    bottles = await bottle_manager.list_bottles(
+        user_id=event.user_id, session=session, include_del=False
+    )
+    if not bottles:
+        await listb.finish("你还没有扔过漂流瓶哦～")
+
+    # 获取漂流瓶预览内容
+    bottles_info = []
+    for bottle in bottles:
+        content_preview = get_content_preview(bottle)
+        bottles_info.append(f"#{bottle.id}【+{bottle.like}】：{content_preview}")
+
+    # 整理消息
+    messages = []
+    total_bottles_info = f"您总共扔了{len(bottles_info)}个漂流瓶～\n"
+    if len(bottles_info) > 10:
+        i = 1
+        while len(bottles_info) > 10:
+            messages.append(
+                total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】"
+            )
+            bottles_info = bottles_info[10:]
+            i = i + 1
+        messages.append(
+            total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页-完】"
+        )
+
+        # 发送合并转发消息
+        await bot.send_group_forward_msg(
+            group_id=event.group_id,
+            messages=[
+                MessageSegment.node_custom(
+                    user_id=event.self_id, nickname="bottle", content=msg
+                )
+                for msg in messages
+            ],
+        )
+    else:
+        await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
+    ba.add("cooldown", event.user_id)
+
+
+
 ###### SUPERUSER命令 ######
 
 
@@ -575,7 +603,7 @@ async def _(
     bottle = await get_bottle(
         index=index, matcher=matcher, session=session, include_del=True
     )
-    mes = f"漂流瓶编号：{index}\n【+{bottle.like}】用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    mes = f"漂流瓶编号：{index}【+{bottle.like}】\n用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
     await listqq.send(mes + deserialize_message(bottle.content))
 
     comments = await bottle_manager.get_comment(
