@@ -17,6 +17,19 @@ class Comment(Model):
 
     bottle_id: Mapped[int]
 
+class Like(Model):
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "bottle_id",
+            name="unique_like",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    bottle_id: Mapped[int]
+
 
 class Report(Model):
     __table_args__ = (
@@ -29,7 +42,6 @@ class Report(Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger)
-
     bottle_id: Mapped[int]
 
 
@@ -41,6 +53,7 @@ class Bottle(Model):
     group_name: Mapped[str]
     content: Mapped[List[Dict[str, Any]]] = mapped_column(JSON)
     report: Mapped[int] = mapped_column(default=0)
+    like: Mapped[int] = mapped_column(default=0)
     picked: Mapped[int] = mapped_column(default=0)
     is_del: Mapped[bool] = mapped_column(default=False)
     time: Mapped[datetime] = mapped_column(default=datetime.now())

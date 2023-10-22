@@ -312,6 +312,27 @@ async def _(
         )
     await session.commit()
 
+@get.got("prompt")
+async def _(
+    matcher: Matcher,
+    event: GroupMessageEvent,
+    like: str = ArgStr("prompt"),
+    session: AsyncSession = Depends(get_session),
+):
+    if like in likes:
+        # index = ??
+        bottle = await get_bottle(index=index, matcher=matcher, session=session)
+        result = await bottle_manager.like_bottle(
+            bottle=bottle, user_id=event.user_id, 
+        )
+        if result == 0:
+            await get.send("你已经点过赞了。")
+        elif result == 1:
+            ba.add("cooldown", event.user_id)
+            await get.send(f"点赞成功～该漂流瓶已有 {bottle.like} 次点赞！")
+            await session.commit()
+    else:
+        get.finish()
 
 @report.handle()
 async def _(
