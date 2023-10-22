@@ -31,7 +31,9 @@ def upgrade() -> None:
                 "like",
                 sa.Integer(),
                 nullable=False,
-            )
+                server_default=sa.schema.DefaultClause("0")
+            ),
+            
         )
     # ### end Alembic commands ###
 
