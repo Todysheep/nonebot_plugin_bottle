@@ -133,7 +133,7 @@ async def _(
     bottles_info = []
     for bottle in bottles:
         content_preview = get_content_preview(bottle)
-        bottles_info.append(f"#{bottle.id}【{bottle.like}+】：{content_preview}")
+        bottles_info.append(f"#{bottle.id}【+{bottle.like}】：{content_preview}")
 
     # 整理消息
     messages = []
@@ -302,7 +302,7 @@ async def _(
     ba.add("cooldown", event.user_id)
     bottle_content = deserialize_message(bottle.content).extract_plain_text().strip()
     bottle_message = (
-        f"【漂流瓶No.{bottle.id}】【{bottle.like}+】\n来自【{group_name}】的“{user_name}”！\n"
+        f"【漂流瓶No.{bottle.id}】【+{bottle.like}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + deserialize_message(bottle.content)
@@ -484,7 +484,7 @@ async def _(
     if not comments and event.user_id != bottle.user_id:
         await check_bottle.finish(
             MessageSegment.reply(message_id)
-            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该#{index} 漂流瓶({bottle.like}+)来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该#{index} 漂流瓶(+{bottle.like})来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
@@ -514,7 +514,7 @@ async def _(
         matcher.set_arg("index", int(index))
         await remove.send(
             MessageSegment.reply(message_id)
-            + f"真的要删除{index}号漂流瓶（Y/N）？【{bottle.like}+】漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}"
+            + f"真的要删除{index}号漂流瓶（Y/N）？【+{bottle.like}】漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}"
         )
     else:
         await remove.finish(MessageSegment.reply(message_id) + "你没有相关权限。")
@@ -575,7 +575,7 @@ async def _(
     bottle = await get_bottle(
         index=index, matcher=matcher, session=session, include_del=True
     )
-    mes = f"漂流瓶编号：{index}\n【{bottle.like}+】用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    mes = f"漂流瓶编号：{index}\n【+{bottle.like}】用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
     await listqq.send(mes + deserialize_message(bottle.content))
 
     comments = await bottle_manager.get_comment(
