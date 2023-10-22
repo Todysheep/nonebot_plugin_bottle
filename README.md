@@ -1,6 +1,5 @@
 # Nonebot 漂流瓶插件
-> **注意**
->
+# **⚠️注意**
 > 2023年10月22日，本插件推送了2.0.0版本。建议在升级2.0.0版本前，先运行`nb datastore upgrade`命令（需要[nb_cli](https://github.com/nonebot/nb-cli))。
 > 
 ## 安装
