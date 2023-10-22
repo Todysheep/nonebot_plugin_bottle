@@ -17,14 +17,9 @@ class Comment(Model):
 
     bottle_id: Mapped[int]
 
+
 class Like(Model):
-    __table_args__ = (
-        UniqueConstraint(
-            "user_id",
-            "bottle_id",
-            name="unique_like",
-        ),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "bottle_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger)

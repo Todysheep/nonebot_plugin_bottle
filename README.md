@@ -1,4 +1,8 @@
 # Nonebot 漂流瓶插件
+> **注意**
+>
+> 升级到2.0.0版本后建议请先运行`nb datastore upgrade`命令（需要[nb_cli](https://github.com/nonebot/nb-cli))。
+> 
 ## 安装
 - 使用 `pip install nonebot_plugin_bottle`
 - 使用 `nb plugin install nonebot_plugin_bottle`

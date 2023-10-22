@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 
-from .model import Bottle, Report, Comment, Like
+from .model import Like, Bottle, Report, Comment
 from .config import api_key, secret_key, local_storage
 
 data_dir = Path("data/bottle")
@@ -299,7 +299,7 @@ class BottleManager:
         bottle: Bottle,
         user_id: int,
         session: AsyncSession,
-    ) -> None:
+    ) -> int:
         """点赞漂流瓶
 
         Args:
@@ -312,16 +312,11 @@ class BottleManager:
         1 点赞成功
         """
         if await session.scalar(
-            select(Like).where(
-                Like.user_id == user_id, Like.bottle_id == bottle.id
-            )
+            select(Like).where(Like.user_id == user_id, Like.bottle_id == bottle.id)
         ):
             return 0
         bottle.like += 1
-        new_like = Like(
-            user_id=user_id, bottle_id=bottle.id
-        )
-        session.add(new_like)
+        session.add(Like(user_id=user_id, bottle_id=bottle.id))
         return 1
 
     async def get_comment(
