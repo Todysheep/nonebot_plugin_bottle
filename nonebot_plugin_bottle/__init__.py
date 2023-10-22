@@ -345,7 +345,7 @@ async def _(
             await get.send(f"点赞成功～该漂流瓶已有 {bottle.like} 次点赞！")
             await session.commit()
     else:
-        await get.finish()
+        matcher.block = False
 
 
 @report.handle()
