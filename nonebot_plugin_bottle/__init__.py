@@ -484,7 +484,7 @@ async def _(
     if not comments and event.user_id != bottle.user_id:
         await check_bottle.finish(
             MessageSegment.reply(message_id)
-            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该#{index} 漂流瓶({bottle.likes}+)来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
+            + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该#{index} 漂流瓶({bottle.like}+)来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
