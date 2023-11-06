@@ -5,6 +5,7 @@ from typing import Union
 from nonebot.typing import T_State
 from nonebot.matcher import Matcher
 from nonebot import require, on_command
+from nonebot.message import handle_event
 from nonebot.permission import SUPERUSER
 from nonebot.plugin import PluginMetadata
 from nonebot.params import Arg, ArgStr, Depends, CommandArg
@@ -271,6 +272,7 @@ async def _(
 
 @get.got("prompt")
 async def _(
+    bot: Bot,
     matcher: Matcher,
     event: GroupMessageEvent,
     like: str = ArgStr("prompt"),
@@ -289,7 +291,7 @@ async def _(
             await get.send(f"点赞成功～该漂流瓶已有 {bottle.like} 次点赞！")
             await session.commit()
     else:
-        matcher.block = False
+        asyncio.create_task(handle_event(bot=bot, event=event))
 
 @like.handle()
 async def _(
