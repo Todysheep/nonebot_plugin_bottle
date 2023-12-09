@@ -128,8 +128,9 @@ async def _(
     args: Message = CommandArg(),
 ):
     await verify(matcher=matcher, event=event)
-    if args:
-        matcher.set_arg("content", args)
+    message = event.reply.message if event.reply else args
+    if message:
+        matcher.set_arg("content", message)
         matcher.set_arg("__has_content__", True)
 
 
