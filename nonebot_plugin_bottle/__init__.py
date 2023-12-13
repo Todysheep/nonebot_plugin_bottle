@@ -31,6 +31,7 @@ from .data_source import (
     serialize_message,
     deserialize_message,
     get_content_preview,
+    whether_collapse,
 )
 
 __plugin_meta__ = PluginMetadata(
@@ -248,14 +249,14 @@ async def _(
     ba.add("cooldown", event.user_id)
     bottle_content = deserialize_message(bottle.content).extract_plain_text().strip()
     bottle_message = (
-        f"【漂流瓶No.{bottle.id}】【+{bottle.like}】\n来自【{group_name}】的“{user_name}”！\n"
+        f"【漂流瓶No.{bottle.id}】【+{bottle.like}/{bottle.picked}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + deserialize_message(bottle.content)
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
     )
 
-    if bottle_content.count("\n") >= 7 or len(bottle_content) > 200:
+    if whether_collapse(bottle, bottle_content):
         await bot.send_group_forward_msg(
             group_id = event.group_id,
             messages=[
@@ -448,7 +449,7 @@ async def _(
         group_name = bottle.group_name
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
     message_id = event.message_id
-    if not comments and event.user_id != bottle.user_id:
+    if not comments and event.user_id != bottle.user_id and str(event.user_id) not in bot.config.superusers:
         await check_bottle.finish(
             MessageSegment.reply(message_id)
             + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该漂流瓶(+{bottle.like})来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
@@ -467,7 +468,7 @@ async def _(
         + f"【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
     
-    if check_msg.count("\n") >= 7 or len(str(check_msg)) > 230:
+    if whether_collapse(bottle, check_msg):
         await bot.send_group_forward_msg(
             group_id = event.group_id,
             messages=[
@@ -498,7 +499,7 @@ async def _(
         matcher.set_arg("index", int(index))
         await remove.send(
             MessageSegment.reply(message_id)
-            + f"真的要删除{index}号漂流瓶（Y/N）？【+{bottle.like}】漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}"
+            + f"真的要删除{index}(+{bottle.like})号漂流瓶（Y/N）？漂流瓶将会永久失去。（真的很久！）\n漂流瓶内容：{content_preview}"
         )
     else:
         await remove.finish(MessageSegment.reply(message_id) + "你没有相关权限。")
@@ -513,7 +514,6 @@ async def _(
 ):
     message_id = event.message_id
     if conf in proceed:
-        # 行数越少越好.jpg
         (await bottle_manager.get_bottle(index=index, session=session)).is_del = True
         await session.commit()
         await remove.send(MessageSegment.reply(message_id) + f"成功删除 {index} 号漂流瓶！")
