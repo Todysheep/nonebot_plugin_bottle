@@ -87,6 +87,19 @@ def get_content_preview(bottle: Bottle) -> str:
     return content_preview
 
 
+def image_count(bottle: Bottle) -> int:
+    count = sum(1 for item in bottle.content if item['type'] == 'image')
+    return count
+
+
+def whether_collapse(bottle: Bottle, bottle_str) -> bool:
+    max_return = 7
+    max_image = 2
+    max_len = 200
+    if bottle_str.count("\n") > max_return or image_count(bottle) > max_image or len(bottle_str) > max_len:
+        return True
+
+
 @post_db_init
 async def _():
     old_data = data_dir / "data.json"
