@@ -96,7 +96,15 @@
 
 
 ## 更新日志
-- 2.0.1 [2023-10-22] [#59](https://github.com/Todysheep/nonebot_plugin_bottle/pull/59)
+- 2.0.0.4 [2023-12-13] [#62](https://github.com/Todysheep/nonebot_plugin_bottle/pull/62)
+    - 图片防刷屏处理
+    - 管理员现在可以使用`查看漂流瓶`来查看他人的漂流瓶
+    - 捡漂流瓶时可以看见被捡起总次数
+- 2.0.0.3 [2023-12-9]
+    - 扔漂流瓶支持扔回复的原消息
+- 2.0.0.2 [2023-11-6] [#60](https://github.com/Todysheep/nonebot_plugin_bottle/issues/60)
+    - 修复了点赞漂流瓶的bug
+- 2.0.0.1 [2023-10-22] [#59](https://github.com/Todysheep/nonebot_plugin_bottle/pull/59)
     - 添加手动点赞漂流瓶功能
     - 格式化代码，调整代码位置
     - 去除冗余代码
