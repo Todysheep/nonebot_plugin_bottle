@@ -15,6 +15,8 @@ class Config(BaseModel, extra=Extra.ignore):
     nonebot_plugin_bottle_max_return: int = 0
     # 字符与换行的比率
     nonebot_plugin_bottle_rt_rate: int = 0
+    # 漂流瓶被评论时将不提示
+    nonebot_plugin_bottle_disable_comment_prompt: bool = False
 
 
 config = Config.parse_obj(get_driver().config.dict())
@@ -24,3 +26,4 @@ local_storage = config.nonebot_plugin_bottle_local_storage
 maxlen = config.nonebot_plugin_bottle_max_length
 maxrt = config.nonebot_plugin_bottle_max_return
 rtrate = config.nonebot_plugin_bottle_rt_rate
+disable_comment_prompt = config.nonebot_plugin_bottle_disable_comment_prompt

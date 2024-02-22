@@ -93,6 +93,7 @@
 | 漂流瓶最大字符数量 | nonebot_plugin_bottle_max_length | int | 0 |
 | 漂流瓶最大换行数量 | nonebot_plugin_bottle_max_return | int | 0 |
 | 漂流瓶字符换行比率 | nonebot_plugin_bottle_rt_rate | int | 0 |
+| 漂流瓶被评论时将不提示 | nonebot_plugin_bottle_disable_comment_prompt | bool | False |
 
 
 ## 更新日志

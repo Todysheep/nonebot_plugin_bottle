@@ -23,7 +23,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 from .model import Bottle
-from .config import Config, maxrt, maxlen, rtrate
+from .config import Config, maxrt, maxlen, rtrate, disable_comment_prompt
 from .data_source import (
     ba,
     text_audit,
@@ -409,14 +409,15 @@ async def _(
         session=session,
     )
     try:
-        await bot.send_group_msg(
-            group_id=bottle.group_id,
-            message=Message(
-                MessageSegment.at(bottle.user_id)
-                + f" 你的{bottle.id}号漂流瓶被评论啦！\n{command[1]}"
-            ),
-        )
-        await asyncio.sleep(2)
+        if not disable_comment_prompt:
+            await bot.send_group_msg(
+                group_id=bottle.group_id,
+                message=Message(
+                    MessageSegment.at(bottle.user_id)
+                    + f" 你的{bottle.id}号漂流瓶被评论啦！\n{command[1]}"
+                ),
+            )
+            await asyncio.sleep(2)
     finally:
         ba.add("cooldown", event.user_id)
         await comment.send("回复成功！")
