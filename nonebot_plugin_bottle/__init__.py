@@ -23,7 +23,14 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 from .model import Bottle
-from .config import Config, maxrt, maxlen, rtrate, disable_comment_prompt
+from .config import (
+    Config,
+    maxrt,
+    maxlen,
+    rtrate,
+    disable_comment_prompt,
+    everyone_can_read,
+)
 from .data_source import (
     ba,
     text_audit,
@@ -69,7 +76,11 @@ SUPERUSER指令：
 )
 
 throw = on_command(
-    "扔漂流瓶", aliases=set(["寄漂流瓶", "丢漂流瓶"]), permission=GROUP, priority=100, block=True
+    "扔漂流瓶",
+    aliases=set(["寄漂流瓶", "丢漂流瓶"]),
+    permission=GROUP,
+    priority=100,
+    block=True,
 )
 get = on_command("捡漂流瓶", priority=100, block=True)
 report = on_command("举报漂流瓶", priority=100, block=True)
@@ -135,7 +146,9 @@ async def _(
         matcher.set_arg("__has_content__", True)
 
 
-@throw.got("content", prompt="在漂流瓶中要写下什么呢？（输入“取消”来取消扔漂流瓶操作。）")
+@throw.got(
+    "content", prompt="在漂流瓶中要写下什么呢？（输入“取消”来取消扔漂流瓶操作。）"
+)
 async def _(
     bot: Bot,
     state: T_State,
@@ -213,7 +226,7 @@ async def _(
         await throw.send("你的瓶子以奇怪的方式消失掉了！")
 
 
-likes = set(["+","点赞","赞"])
+likes = set(["+", "点赞", "赞"])
 
 
 @get.handle()
@@ -258,10 +271,10 @@ async def _(
 
     if whether_collapse(bottle, bottle_content):
         await bot.send_group_forward_msg(
-            group_id = event.group_id,
+            group_id=event.group_id,
             messages=[
                 MessageSegment.node_custom(
-                    user_id = event.self_id, nickname = "Bottle", content = bottle_message
+                    user_id=event.self_id, nickname="Bottle", content=bottle_message
                 )
             ],
         )
@@ -295,6 +308,7 @@ async def _(
     else:
         asyncio.create_task(handle_event(bot=bot, event=event))
 
+
 @like.handle()
 async def _(
     matcher: Matcher,
@@ -305,7 +319,7 @@ async def _(
     index = args.extract_plain_text().strip()
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     result = await bottle_manager.like_bottle(
-            bottle=bottle, user_id=event.user_id, session=session
+        bottle=bottle, user_id=event.user_id, session=session
     )
     if result == 0:
         await like.send("你已经点过赞了。")
@@ -313,7 +327,7 @@ async def _(
         ba.add("cooldown", event.user_id)
         await like.send(f"点赞成功～该漂流瓶已有 {bottle.like} 次点赞！")
         await session.commit()
-    
+
 
 @report.handle()
 async def _(
@@ -375,9 +389,13 @@ async def _(
     command = args.extract_plain_text().strip().split()
     message_id = event.message_id
     if not command:
-        await comment.finish(MessageSegment.reply(message_id) + f"请在指令后接 漂流瓶id 评论")
+        await comment.finish(
+            MessageSegment.reply(message_id) + f"请在指令后接 漂流瓶id 评论"
+        )
     if len(command) == 1:
-        await comment.finish(MessageSegment.reply(message_id) + "想评论什么呀，在后边写上吧！")
+        await comment.finish(
+            MessageSegment.reply(message_id) + "想评论什么呀，在后边写上吧！"
+        )
     bottle = await get_bottle(index=command[0], matcher=matcher, session=session)
     user_info = await bot.get_group_member_info(
         group_id=event.group_id, user_id=event.user_id
@@ -450,12 +468,16 @@ async def _(
         group_name = bottle.group_name
     comments = await bottle_manager.get_comment(bottle=bottle, session=session)
     message_id = event.message_id
-    if not comments and event.user_id != bottle.user_id and str(event.user_id) not in bot.config.superusers:
+    if not everyone_can_read and (
+        not comments
+        and event.user_id != bottle.user_id
+        and str(event.user_id) not in bot.config.superusers
+    ):
         await check_bottle.finish(
             MessageSegment.reply(message_id)
             + f"这个漂流瓶还没有评论，或你不是此漂流瓶的主人，因此不能给你看里面的东西！\n【该漂流瓶(+{bottle.like})来自【{group_name}】的 {user_name}，被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
         )
-    
+
     comment_str = "\n".join(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
@@ -465,23 +487,23 @@ async def _(
         MessageSegment.reply(message_id)
         + f"#{bottle.id}(+{bottle.like})：来自【{group_name}】的 {user_name}\n"
         + deserialize_message(bottle.content)
-        + f"\n\n" + comment_all
+        + f"\n\n"
+        + comment_all
         + f"【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
-        )
-    
+    )
+
     if whether_collapse(bottle, check_msg):
         await bot.send_group_forward_msg(
-            group_id = event.group_id,
+            group_id=event.group_id,
             messages=[
                 MessageSegment.node_custom(
-                    user_id = event.self_id, nickname = "Bottle", content = check_msg
+                    user_id=event.self_id, nickname="Bottle", content=check_msg
                 )
             ],
         )
     else:
         message_id = event.message_id
         await check_bottle.finish(MessageSegment.reply(message_id) + check_msg)
-
 
 
 @remove.handle()
@@ -517,7 +539,9 @@ async def _(
     if conf in proceed:
         (await bottle_manager.get_bottle(index=index, session=session)).is_del = True
         await session.commit()
-        await remove.send(MessageSegment.reply(message_id) + f"成功删除 {index} 号漂流瓶！")
+        await remove.send(
+            MessageSegment.reply(message_id) + f"成功删除 {index} 号漂流瓶！"
+        )
     else:
         await remove.finish(MessageSegment.reply(message_id) + "取消删除操作。")
 
@@ -568,7 +592,6 @@ async def _(
     ba.add("cooldown", event.user_id)
 
 
-
 ###### SUPERUSER命令 ######
 
 
@@ -587,7 +610,10 @@ async def _(
     await resume.finish(f"成功恢复 {index} 号漂流瓶！")
 
 
-@clear.got("prompt", prompt="你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）")
+@clear.got(
+    "prompt",
+    prompt="你确定要清空所有漂流瓶吗？（Y/N）所有的漂流瓶都将会永久失去。（真的很久！）",
+)
 async def _(conf: str = ArgStr("prompt"), session: AsyncSession = Depends(get_session)):
     if conf in proceed:
         await bottle_manager.clear(session)

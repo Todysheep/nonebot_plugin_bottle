@@ -17,6 +17,8 @@ class Config(BaseModel, extra=Extra.ignore):
     nonebot_plugin_bottle_rt_rate: int = 0
     # 漂流瓶被评论时将不提示
     nonebot_plugin_bottle_disable_comment_prompt: bool = False
+    # 所有人都可查看漂流瓶
+    nonebot_plugin_bottle_everyone_can_read: bool = False
 
 
 config = Config.parse_obj(get_driver().config.dict())
@@ -27,3 +29,4 @@ maxlen = config.nonebot_plugin_bottle_max_length
 maxrt = config.nonebot_plugin_bottle_max_return
 rtrate = config.nonebot_plugin_bottle_rt_rate
 disable_comment_prompt = config.nonebot_plugin_bottle_disable_comment_prompt
+everyone_can_read = config.nonebot_plugin_bottle_everyone_can_read
