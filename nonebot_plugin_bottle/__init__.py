@@ -20,6 +20,7 @@ from nonebot.adapters.onebot.v11 import (
     ActionFailed,
     MessageSegment,
     GroupMessageEvent,
+    MessageEvent,
 )
 
 from .model import Bottle
@@ -625,6 +626,8 @@ async def _(conf: str = ArgStr("prompt"), session: AsyncSession = Depends(get_se
 
 @listqq.handle()
 async def _(
+    bot: Bot,
+    event: MessageEvent,
     matcher: Matcher,
     args: Message = CommandArg(),
     session: AsyncSession = Depends(get_session),
@@ -633,8 +636,24 @@ async def _(
     bottle = await get_bottle(
         index=index, matcher=matcher, session=session, include_del=True
     )
-    mes = f"漂流瓶编号：{index}【+{bottle.like}】\n用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-    await listqq.send(mes + deserialize_message(bottle.content))
+
+    msg_list = []
+
+    mes = (
+        ("【已删除】" if bottle.is_del else "")
+        + f"漂流瓶编号：{index}【+{bottle.like}】\n用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
+    msg_list.append(mes + deserialize_message(bottle.content))
+
+    report_info = await bottle_manager.get_report_info(bottle=bottle, session=session)
+
+    if report_info:
+        msg_list.append(
+            f"被举报 {len(report_info)} 次\n举报人：\n"
+            + "\n".join([str(report.user_id) for report in report_info])
+        )
+    else:
+        msg_list.append("漂流瓶暂未被举报")
 
     comments = await bottle_manager.get_comment(
         bottle=bottle, session=session, limit=None
@@ -646,9 +665,30 @@ async def _(
         ]
     )
     if comment_str:
-        await listqq.send(comment_str)
+        msg_list.append(comment_str)
     else:
-        await listqq.send("漂流瓶暂无回复")
+        msg_list.append("漂流瓶暂无回复")
+
+    if isinstance(event, GroupMessageEvent):
+        await bot.send_forward_msg(
+            group_id=event.group_id,
+            messages=[
+                MessageSegment.node_custom(
+                    user_id=event.self_id, nickname="Bottle", content=msg
+                )
+                for msg in msg_list
+            ],
+        )
+    else:
+        await bot.send_forward_msg(
+            user_id=event.user_id,
+            messages=[
+                MessageSegment.node_custom(
+                    user_id=event.self_id, nickname="Bottle", content=msg
+                )
+                for msg in msg_list
+            ],
+        )
 
 
 @ban.handle()

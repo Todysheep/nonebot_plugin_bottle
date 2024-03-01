@@ -88,7 +88,7 @@ def get_content_preview(bottle: Bottle) -> str:
 
 
 def image_count(bottle: Bottle) -> int:
-    count = sum(1 for item in bottle.content if item['type'] == 'image')
+    count = sum(1 for item in bottle.content if item["type"] == "image")
     return count
 
 
@@ -96,7 +96,11 @@ def whether_collapse(bottle: Bottle, bottle_str) -> bool:
     max_return = 7
     max_image = 2
     max_len = 200
-    if bottle_str.count("\n") > max_return or image_count(bottle) > max_image or len(bottle_str) > max_len:
+    if (
+        bottle_str.count("\n") > max_return
+        or image_count(bottle) > max_image
+        or len(bottle_str) > max_len
+    ):
         return True
 
 
@@ -284,6 +288,15 @@ class BottleManager:
             new_report = Report(user_id=user_id, bottle_id=bottle.id)
             session.add(new_report)
             return 1
+
+    async def get_report_info(
+        self, bottle: Bottle, session: AsyncSession
+    ) -> List[Report]:
+        """获取举报信息"""
+        report_info = await session.scalars(
+            select(Report).where(Report.bottle_id == bottle.id)
+        )
+        return report_info.all()
 
     def comment(
         self,
@@ -593,7 +606,10 @@ async def text_audit(text: str, ak=api_key, sk=secret_key):
             async with aiofiles.open(cursepath, "r", encoding="utf-8") as f:
                 for i in json.loads(await f.read()):
                     if i in text:
-                        return {"conclusion": "不合规", "data": [{"msg": f"触发违禁词 {i}"}]}
+                        return {
+                            "conclusion": "不合规",
+                            "data": [{"msg": f"触发违禁词 {i}"}],
+                        }
                 return "pass"
         except:
             if not cursepath.exists():
