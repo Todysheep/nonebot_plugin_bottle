@@ -1,6 +1,6 @@
 import random
 import asyncio
-from typing import Union
+from typing import Union, Any, List
 
 from nonebot.typing import T_State
 from nonebot.matcher import Matcher
@@ -132,6 +132,40 @@ async def verify(matcher: Matcher, event: GroupMessageEvent) -> None:
 # 信息初始化
 proceed = set(["是", "对", "Y", "Yes", "y", "yes"])
 cancel = set(["取消", "cancel"])
+
+
+async def try_send_forward(event: MessageEvent, bot: Bot, messages: List[Any]):
+    new_messages = []
+    for message in messages:
+        if isinstance(message, str):
+            new_messages.append(Message(message))
+        elif isinstance(message, MessageSegment):
+            new_messages.append(Message(message))
+        elif isinstance(message, Message):
+            new_messages.append(message)
+    forward_messages = [
+        MessageSegment(
+            type="node",
+            data={
+                "user_id": str(event.self_id),
+                "nickname": "Bottle",
+                "name": "Bottle",
+                "uin": str(event.self_id),
+                "content": message,
+            },
+        )
+        for message in new_messages
+    ]
+    if isinstance(event, GroupMessageEvent):
+        await bot.send_group_forward_msg(
+            group_id=event.group_id,
+            messages=forward_messages,
+        )
+    else:
+        await bot.send_private_forward_msg(
+            user_id=event.user_id,
+            messages=forward_messages,
+        )
 
 
 @throw.handle()
@@ -271,14 +305,7 @@ async def _(
     )
 
     if whether_collapse(bottle, bottle_content):
-        await bot.send_group_forward_msg(
-            group_id=event.group_id,
-            messages=[
-                MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="Bottle", content=bottle_message
-                )
-            ],
-        )
+        await try_send_forward(event, bot, [bottle_message])
     else:
         message_id = event.message_id
         await get.send(MessageSegment.reply(message_id) + bottle_message)
@@ -494,14 +521,7 @@ async def _(
     )
 
     if whether_collapse(bottle, check_msg):
-        await bot.send_group_forward_msg(
-            group_id=event.group_id,
-            messages=[
-                MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="Bottle", content=check_msg
-                )
-            ],
-        )
+        await try_send_forward(event, bot, [check_msg])
     else:
         message_id = event.message_id
         await check_bottle.finish(MessageSegment.reply(message_id) + check_msg)
@@ -579,15 +599,7 @@ async def _(
         )
 
         # 发送合并转发消息
-        await bot.send_group_forward_msg(
-            group_id=event.group_id,
-            messages=[
-                MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="bottle", content=msg
-                )
-                for msg in messages
-            ],
-        )
+        await try_send_forward(event, bot, messages)
     else:
         await listb.finish(total_bottles_info + "\n".join(bottles_info[:10]))
     ba.add("cooldown", event.user_id)
@@ -668,27 +680,7 @@ async def _(
         msg_list.append(comment_str)
     else:
         msg_list.append("漂流瓶暂无回复")
-
-    if isinstance(event, GroupMessageEvent):
-        await bot.send_forward_msg(
-            group_id=event.group_id,
-            messages=[
-                MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="Bottle", content=msg
-                )
-                for msg in msg_list
-            ],
-        )
-    else:
-        await bot.send_forward_msg(
-            user_id=event.user_id,
-            messages=[
-                MessageSegment.node_custom(
-                    user_id=event.self_id, nickname="Bottle", content=msg
-                )
-                for msg in msg_list
-            ],
-        )
+    await try_send_forward(event, bot, msg_list)
 
 
 @ban.handle()
