@@ -295,7 +295,7 @@ async def _(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
     ba.add("cooldown", event.user_id)
-    bottle_content = await deserialize_message(bottle.content).extract_plain_text().strip()
+    bottle_content = (await deserialize_message(bottle.content)).extract_plain_text().strip()
     bottle_message = (
         f"【漂流瓶No.{bottle.id}】【+{bottle.like}/{bottle.picked}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
