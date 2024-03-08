@@ -295,12 +295,12 @@ async def _(
         [f"{comment.user_name}：{comment.content}" for comment in comments]
     )
     ba.add("cooldown", event.user_id)
-    bottle_content = deserialize_message(bottle.content).extract_plain_text().strip()
+    bottle_content = await deserialize_message(bottle.content).extract_plain_text().strip()
     bottle_message = (
         f"【漂流瓶No.{bottle.id}】【+{bottle.like}/{bottle.picked}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
-        + deserialize_message(bottle.content)
+        + await deserialize_message(bottle.content)
         + (f"\n★前 {len(comments)} 条评论★\n{comment_str}" if comment_str else "")
     )
 
@@ -382,7 +382,7 @@ async def _(
         await session.commit()
     elif result == 2:
         mes = f"有一漂流瓶遭到封禁！\n编号：{bottle.id}\n用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n"
-        mes += deserialize_message(bottle.content)
+        mes += await deserialize_message(bottle.content)
         comments = await bottle_manager.get_comment(
             bottle=bottle, session=session, limit=None
         )
@@ -514,7 +514,7 @@ async def _(
     check_msg = (
         MessageSegment.reply(message_id)
         + f"#{bottle.id}(+{bottle.like})：来自【{group_name}】的 {user_name}\n"
-        + deserialize_message(bottle.content)
+        + await deserialize_message(bottle.content)
         + f"\n\n"
         + comment_all
         + f"【被捡到{bottle.picked}次，于{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}扔出】"
@@ -539,7 +539,7 @@ async def _(
     bottle = await get_bottle(index=index, matcher=matcher, session=session)
     message_id = event.message_id
     if str(event.user_id) in bot.config.superusers or bottle.user_id == event.user_id:
-        content_preview = get_content_preview(bottle)
+        content_preview = await get_content_preview(bottle)
         matcher.set_arg("index", int(index))
         await remove.send(
             MessageSegment.reply(message_id)
@@ -580,7 +580,7 @@ async def _(
     # 获取漂流瓶预览内容
     bottles_info = []
     for bottle in bottles:
-        content_preview = get_content_preview(bottle)
+        content_preview = await get_content_preview(bottle)
         bottles_info.append(f"#{bottle.id}【+{bottle.like}】：{content_preview}")
 
     # 整理消息
@@ -655,7 +655,7 @@ async def _(
         ("【已删除】" if bottle.is_del else "")
         + f"漂流瓶编号：{index}【+{bottle.like}】\n用户QQ：{bottle.user_id}\n来源群组：{bottle.group_id}\n发送时间：{bottle.time.strftime('%Y-%m-%d %H:%M:%S')}\n"
     )
-    msg_list.append(mes + deserialize_message(bottle.content))
+    msg_list.append(mes + await deserialize_message(bottle.content))
 
     report_info = await bottle_manager.get_report_info(bottle=bottle, session=session)
 

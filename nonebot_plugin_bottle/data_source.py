@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
 import aiofiles
+from base64 import b64encode
 from nonebot.log import logger
 from pydantic import parse_obj_as
 from sqlalchemy import func, text, select
@@ -58,6 +59,9 @@ async def cache_image_url(seg: MessageSegment, client: httpx.AsyncClient):
             await f.write(data)
     seg.data = {"file": filename}
 
+async def file_to_b64(file: Path) -> str:
+    async with aiofiles.open(file, 'rb') as f:
+        return f"base64://{b64encode(await f.read()).decode()}"
 
 async def serialize_message(message: Message) -> List[Dict[str, Any]]:
     if local_storage:
@@ -65,16 +69,16 @@ async def serialize_message(message: Message) -> List[Dict[str, Any]]:
     return [seg.__dict__ for seg in message]
 
 
-def deserialize_message(message: List[Dict[str, Any]]) -> Message:
+async def deserialize_message(message: List[Dict[str, Any]]) -> Message:
     for seg in message:
         if seg["type"] == "cached_image":
             seg["type"] = "image"
-            seg["data"]["file"] = (cache_dir / seg["data"]["file"]).resolve().as_uri()
+            seg["data"]["file"] = await file_to_b64(cache_dir / seg["data"]["file"])
     return parse_obj_as(Message, message)
 
 
-def get_content_preview(bottle: Bottle) -> str:
-    message_parts = deserialize_message(bottle.content)
+async def get_content_preview(bottle: Bottle) -> str:
+    message_parts = await deserialize_message(bottle.content)
     content_preview = ""
     for part in message_parts:
         if part.type == "text":
