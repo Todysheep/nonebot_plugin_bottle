@@ -31,6 +31,7 @@ from .config import (
     rtrate,
     disable_comment_prompt,
     everyone_can_read,
+    disable_forward
 )
 from .data_source import (
     ba,
@@ -135,6 +136,16 @@ cancel = set(["取消", "cancel"])
 
 
 async def try_send_forward(event: MessageEvent, bot: Bot, messages: List[Any]):
+    if disable_forward:
+        if isinstance(event, GroupMessageEvent):
+            for message in messages:
+                await bot.send_group_msg(group_id=event.group_id, message=message)
+                await asyncio.sleep(0.2)
+        else:
+            for message in messages:
+                await bot.send_private_msg(group_id=event.user_id, message=message)
+                await asyncio.sleep(0.2)
+        return
     new_messages = []
     for message in messages:
         if isinstance(message, str):

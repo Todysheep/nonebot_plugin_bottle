@@ -19,6 +19,8 @@ class Config(BaseModel, extra=Extra.ignore):
     nonebot_plugin_bottle_disable_comment_prompt: bool = False
     # 所有人都可查看漂流瓶
     nonebot_plugin_bottle_everyone_can_read: bool = False
+    # 关闭转发发送（False为开启转发）
+    nonebot_plugin_bottle_disable_forward: bool = False
 
 
 config = Config.parse_obj(get_driver().config.dict())
@@ -30,3 +32,4 @@ maxrt = config.nonebot_plugin_bottle_max_return
 rtrate = config.nonebot_plugin_bottle_rt_rate
 disable_comment_prompt = config.nonebot_plugin_bottle_disable_comment_prompt
 everyone_can_read = config.nonebot_plugin_bottle_everyone_can_read
+disable_forward = config.nonebot_plugin_bottle_disable_forward

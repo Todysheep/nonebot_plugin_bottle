@@ -95,6 +95,7 @@
 | 漂流瓶字符换行比率 | nonebot_plugin_bottle_rt_rate | int | 0 |
 | 漂流瓶被评论时将不提示 | nonebot_plugin_bottle_disable_comment_prompt | bool | False |
 | 任何情况下都可以查看漂流瓶（若False，则仅有评论或主人可查看） | nonebot_plugin_bottle_everyone_can_read | bool | False |
+| 关闭转发（若True，则所有转发消息都会逐条发出） | nonebot_plugin_bottle_disable_forward | bool | False |
 
 
 ## 更新日志
