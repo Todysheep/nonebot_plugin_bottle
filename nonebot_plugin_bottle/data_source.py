@@ -23,6 +23,7 @@ from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 
 from .model import Like, Bottle, Report, Comment
 from .config import api_key, secret_key, local_storage
+from .exception import NotSupportMessage
 
 data_dir = Path("data/bottle")
 if local_storage:
@@ -64,6 +65,9 @@ async def file_to_b64(file: Path) -> str:
         return f"base64://{b64encode(await f.read()).decode()}"
 
 async def serialize_message(message: Message) -> List[Dict[str, Any]]:
+    for seg in message:
+        if seg.type not in ("text", "image"):
+            raise NotSupportMessage("漂流瓶只支持文字和图片~")
     if local_storage:
         await cache_file(message)
     return [seg.__dict__ for seg in message]
