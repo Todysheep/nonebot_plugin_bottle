@@ -42,6 +42,7 @@ from .data_source import (
     get_content_preview,
     whether_collapse,
 )
+from .exception import NotSupportMessage
 
 __plugin_meta__ = PluginMetadata(
     name="漂流瓶",
@@ -250,14 +251,17 @@ async def _(
     )
     user_name = user_info.get("card") or user_info.get("nickname")
 
-    add_index = await bottle_manager.add_bottle(
-        user_id=event.user_id,
-        group_id=event.group_id,
-        content=await serialize_message(message=args),
-        user_name=user_name,
-        group_name=group_name,
-        session=session,
-    )
+    try:
+        add_index = await bottle_manager.add_bottle(
+            user_id=event.user_id,
+            group_id=event.group_id,
+            content=await serialize_message(message=args),
+            user_name=user_name,
+            group_name=group_name,
+            session=session,
+        )
+    except NotSupportMessage as e:
+        await throw.finish(str(e))
     await session.commit()
     if add_index:
         # 添加个人冷却
