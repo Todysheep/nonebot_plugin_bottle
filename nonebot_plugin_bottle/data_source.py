@@ -41,15 +41,19 @@ async def cache_file(msg: Message):
 
 
 async def cache_image_url(seg: MessageSegment, client: httpx.AsyncClient):
-    if url := seg.data.get("url"):
-        try:
-            r = await client.get(url)
-            data = r.content
-        except httpx.TimeoutException:
-            return
-        seg.type = "cached_image"
-        seg.data.clear()
-    else:
+    url = seg.data.get("url")
+    if not url:
+        return
+    
+    seg.type = "cached_image"
+    seg.data.clear()
+    try:
+        r = await client.get(url)
+        data = r.content
+    except httpx.TimeoutException:
+        return
+    
+    if r.status_code != 200 or not data:
         return
     hash = hashlib.md5(data).hexdigest()
     filename = f"{hash}.cache"

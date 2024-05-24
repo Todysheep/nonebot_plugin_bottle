@@ -252,10 +252,14 @@ async def _(
     user_name = user_info.get("card") or user_info.get("nickname")
 
     try:
+        serialized_content = await serialize_message(message=args)
+        cache_result = [not part.get("data") for part in serialized_content if part["type"] == "cached_image"]
+        if any(cache_result):
+            await throw.finish(MessageSegment.reply(message_id) + "漂流瓶中的图片未能缓存成功。")
         add_index = await bottle_manager.add_bottle(
             user_id=event.user_id,
             group_id=event.group_id,
-            content=await serialize_message(message=args),
+            content=serialized_content,
             user_name=user_name,
             group_name=group_name,
             session=session,
