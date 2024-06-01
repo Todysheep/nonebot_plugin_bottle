@@ -137,15 +137,32 @@ cancel = set(["取消", "cancel"])
 
 
 async def try_send_forward(event: MessageEvent, bot: Bot, messages: List[Any]):
+    error_msg = [
+        "你只捞到一些海洋垃圾，为海洋净化做出了一份贡献。",
+        "捡到的瓶子碎掉了！",
+        "这个瓶子没有塞子，里面的纸条已经丢失。",
+        "你掏出瓶子内的纸条的一瞬间纸条老化碎掉了！",
+        "瓶子里的纸条字迹已经无法辨认！"
+    ]
+    from random import choice
+    error_msg = choice(error_msg)
     if disable_forward:
         if isinstance(event, GroupMessageEvent):
             for message in messages:
-                await bot.send_group_msg(group_id=event.group_id, message=message)
-                await asyncio.sleep(0.2)
+                try:
+                    await bot.send_group_msg(group_id=event.group_id, message=message)
+                except ActionFailed:
+                    await bot.send_group_msg(group_id=event.group_id, message=error_msg)
+                finally:
+                    await asyncio.sleep(0.2)
         else:
             for message in messages:
-                await bot.send_private_msg(group_id=event.user_id, message=message)
-                await asyncio.sleep(0.2)
+                try:
+                    await bot.send_private_msg(group_id=event.user_id, message=message)
+                except ActionFailed:
+                    await bot.send_private_msg(group_id=event.user_id, message=error_msg)
+                finally:
+                    await asyncio.sleep(0.2)
         return
     new_messages = []
     for message in messages:
@@ -169,15 +186,15 @@ async def try_send_forward(event: MessageEvent, bot: Bot, messages: List[Any]):
         for message in new_messages
     ]
     if isinstance(event, GroupMessageEvent):
-        await bot.send_group_forward_msg(
-            group_id=event.group_id,
-            messages=forward_messages,
-        )
+        try:
+            await bot.send_group_forward_msg(group_id=event.group_id, messages=forward_messages)
+        except ActionFailed:
+            await bot.send_group_msg(group_id=event.group_id, message=error_msg)
     else:
-        await bot.send_private_forward_msg(
-            user_id=event.user_id,
-            messages=forward_messages,
-        )
+        try:
+            await bot.send_private_forward_msg(user_id=event.user_id, messages=forward_messages)
+        except ActionFailed:
+            await bot.send_private_msg(group_id=event.user_id, message=error_msg)
 
 
 @throw.handle()
@@ -253,7 +270,8 @@ async def _(
 
     try:
         serialized_content = await serialize_message(message=args)
-        cache_result = [not part.get("data") for part in serialized_content if part["type"] == "cached_image"]
+        cache_result = [not part.get(
+            "data") for part in serialized_content if part["type"] == "cached_image"]
         if any(cache_result):
             await throw.finish(MessageSegment.reply(message_id) + "漂流瓶中的图片未能缓存成功。")
         add_index = await bottle_manager.add_bottle(
@@ -609,7 +627,8 @@ async def _(
         i = 1
         while len(bottles_info) > 10:
             messages.append(
-                total_bottles_info + "\n".join(bottles_info[:10]) + f"\n【第{i}页】"
+                total_bottles_info +
+                "\n".join(bottles_info[:10]) + f"\n【第{i}页】"
             )
             bottles_info = bottles_info[10:]
             i = i + 1
