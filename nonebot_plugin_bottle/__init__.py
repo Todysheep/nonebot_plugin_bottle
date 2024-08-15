@@ -43,6 +43,7 @@ from .data_source import (
     whether_collapse,
 )
 from .exception import NotSupportMessage
+from . import webui
 
 __plugin_meta__ = PluginMetadata(
     name="漂流瓶",

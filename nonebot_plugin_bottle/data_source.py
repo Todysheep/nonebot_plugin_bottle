@@ -189,6 +189,22 @@ class BottleManager:
             )
         else:
             return await session.scalar(select(Bottle).where(Bottle.id == index))
+        
+    async def get_bottles_resp(self, page: int, size: int, session: AsyncSession):
+        bottles = await session.scalars(
+                select(Bottle).where(Bottle.is_del == False).order_by(Bottle.id).limit(size).offset((page - 1) * size)
+            )
+        resp = []
+        from .webui.model.bottle_resp import Bottle as BottleResp
+        from .webui.model.bottle_resp import Comment as CommentResp
+        for bottle in bottles:
+            bottleResp = BottleResp(id = bottle.id, user_id=bottle.user_id, group_id=bottle.group_id, user_name=bottle.user_name,
+                                    group_name=bottle.group_name,content=str(bottle.content), report=bottle.report,like=bottle.like,picked=bottle.picked,time=bottle.time.strftime("%Y-%m-%d, %H:%M:%S"), comment=[])
+            comments = await self.get_comment(bottle=bottle, session=session, limit=None)
+            for comment in comments:
+                bottleResp.comment.append(CommentResp(user_id=comment.user_id, user_name=comment.user_name, content=comment.content, time = comment.time.strftime("%Y-%m-%d, %H:%M:%S")))
+            resp.append(bottleResp)
+        return resp
 
     async def add_bottle(
         self,
@@ -373,12 +389,12 @@ class BottleManager:
         Returns:
             Sequence[Comment]: 评论们
         """
+        statement = select(Comment).where(Comment.bottle_id == bottle.id).order_by(Comment.time.desc())
+        if limit is not None:
+            statement.limit(limit)
         return (
             await session.scalars(
-                statement=select(Comment)
-                .where(Comment.bottle_id == bottle.id)
-                .order_by(Comment.time.desc())
-                .limit(limit)
+                statement=statement
             )
         ).all()
 
