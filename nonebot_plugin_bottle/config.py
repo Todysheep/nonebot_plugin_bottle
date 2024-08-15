@@ -22,14 +22,8 @@ class Config(BaseModel, extra=Extra.ignore):
     # 关闭转发发送（False为开启转发）
     nonebot_plugin_bottle_disable_forward: bool = False
 
-    # 是否启用审批
-    nonebot_plugin_bottle_enable_approve: bool = False
-    # webui 管理员用户名
-    nonebot_plugin_bottle_admin_user: str = "admin"
-    # webui 如果空就每次启动随机生成一个
-    nonebot_plugin_bottle_admin_password: str = ""
 
-config: Config = Config.parse_obj(get_driver().config.dict())
+config = Config.parse_obj(get_driver().config.dict())
 api_key = config.nonebot_plugin_bottle_api_key
 secret_key = config.nonebot_plugin_bottle_secret_key
 local_storage = config.nonebot_plugin_bottle_local_storage
