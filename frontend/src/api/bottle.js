@@ -7,3 +7,11 @@ export function getBottles(params) {
     params: params
   })
 }
+
+export function getComments(params) {
+  return request({
+    url: 'api/getComments',
+    method: 'get',
+    params: params
+  })
+}

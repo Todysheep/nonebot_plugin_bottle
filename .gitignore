@@ -5,3 +5,4 @@ nonebot_plugin_bottle/.DS_Store
 build
 node_modules
 .env.development
+__pycache__

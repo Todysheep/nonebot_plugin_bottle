@@ -38,7 +38,10 @@ module.exports = {
     },
     proxy: {
       '/api': {
-        target: 'http://192.168.2.105:1207'
+        target: 'http://127.0.0.1:1206'
+      },
+      '/images': {
+        target: 'http://127.0.0.1:1206'
       }
     }
   },

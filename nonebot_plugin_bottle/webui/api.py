@@ -1,16 +1,19 @@
 from fastapi.routing import APIRouter
 from .utils import generate_password
 from nonebot.log import logger
+from nonebot import get_app
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, UTC
 from pydantic import BaseModel
-from .model.bottle_resp import Bottle
+from .model.bottle_resp import Bottle, Comment
 from ..data_source import bottle_manager
 from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from ..data_source import cache_dir
 
 SECRET_KEY = "P8S8enUyywx8YEP39@o#DP@gRSQ9!ToZPFp#R#V%cya$!aNpNDrj!AT!a"
 ALGORITHM = "HS256"
@@ -23,14 +26,14 @@ from ..config import config
 
 router = APIRouter(prefix="/bottle/api", tags=["bottle-api"])
 
+get_app().mount("/bottle/images", StaticFiles(directory=cache_dir), name="static")
+
 admin_user = config.nonebot_plugin_bottle_admin_user if config.nonebot_plugin_bottle_admin_user else ""
 admin_password = config.nonebot_plugin_bottle_admin_password
 
 class User(BaseModel):
     username: str
     password: str
-
-print(config)
 
 if not admin_password:
     admin_password = generate_password(12)
@@ -138,6 +141,12 @@ async def login_for_access_token(form_data: LoginRequest):
 
 @router.get("/getBottles", response_model=list[Bottle])
 async def get_bottles(page: int = 0, page_size: int = 10, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
-    bottles = await bottle_manager.get_bottles_resp(page = page, size=page_size, session=session)
+    from .data_source import get_bottles_resp
     
-    return bottles
+    return await get_bottles_resp(page=page, size=page_size, session=session)
+
+@router.get("/getComments", response_model=list[Comment])
+async def get_bottles(bottle_id: int, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import get_comments
+    
+    return await get_comments(bottle_id=bottle_id, session= session)
