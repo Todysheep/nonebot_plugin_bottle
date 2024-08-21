@@ -1,6 +1,7 @@
 from fastapi.routing import APIRouter
 from .utils import generate_password
 from nonebot.log import logger
+from typing import Optional
 from nonebot import get_app
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -150,3 +151,9 @@ async def get_bottles(bottle_id: int, session: AsyncSession = Depends(get_sessio
     from .data_source import get_comments
     
     return await get_comments(bottle_id=bottle_id, session= session)
+
+@router.get("/search", response_model=list[Bottle])
+async def get_bottles(bottle_id: Optional[int] = None, group_id:Optional[int] = None, user_id:Optional[int] = None, content: Optional[str] = None, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import search
+    
+    return await search(bottle_id=bottle_id,group_id=group_id,user_id=user_id,session= session)
