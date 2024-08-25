@@ -141,19 +141,13 @@ async def login_for_access_token(form_data: LoginRequest):
     return {"token": access_token, "token_type": "bearer"}
 
 @router.get("/getBottles", response_model=list[Bottle])
-async def get_bottles(page: int = 0, page_size: int = 10, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+async def get_bottles(page: int = 0, page_size: int = 10, bottle_id: Optional[str] = None, group_id:Optional[str] = None, user_id:Optional[str] = None, content: Optional[str] = None,session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
     from .data_source import get_bottles_resp
     
-    return await get_bottles_resp(page=page, size=page_size, session=session)
+    return await get_bottles_resp(page=page, size=page_size,bottle_id=bottle_id,group_id=group_id,user_id=user_id, content=content,session=session)
 
 @router.get("/getComments", response_model=list[Comment])
 async def get_bottles(bottle_id: int, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
     from .data_source import get_comments
     
     return await get_comments(bottle_id=bottle_id, session= session)
-
-@router.get("/search", response_model=list[Bottle])
-async def get_bottles(bottle_id: Optional[int] = None, group_id:Optional[int] = None, user_id:Optional[int] = None, content: Optional[str] = None, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
-    from .data_source import search
-    
-    return await search(bottle_id=bottle_id,group_id=group_id,user_id=user_id,session= session)

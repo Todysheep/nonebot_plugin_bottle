@@ -1,25 +1,10 @@
-import re
-import time
-import asyncio
-import hashlib
-from pathlib import Path
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence
+from typing import List, Optional
 
-import httpx
-import aiofiles
-from base64 import b64encode
-from nonebot.log import logger
-from pydantic import parse_obj_as
-from sqlalchemy import func, text, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from nonebot.adapters.onebot.v11 import Message, MessageSegment
-from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 from .template import getHtml
 
-from ..model import Like, Bottle, Report, Comment
-from ..config import api_key, secret_key, local_storage
-from ..exception import NotSupportMessage
+from ..model import Bottle
 
 from .model.bottle_resp import Comment as CommentResp, Bottle as BottleResp
 
@@ -34,13 +19,23 @@ async def bottle_model_to_resp(bottle: Bottle, session: AsyncSession) -> BottleR
     return bottleResp
 
 
-async def get_bottles_resp(page: int, size: int, session: AsyncSession) -> List[BottleResp]:
+async def get_bottles_resp(page: int, size: int, bottle_id: Optional[str], group_id: Optional[str], user_id: Optional[str], content: Optional[str], session: AsyncSession) -> List[BottleResp]:
+        statement = select(Bottle).where(Bottle.is_del == False)
+        if bottle_id:
+            statement = statement.where(Bottle.id == int(bottle_id))
+        if group_id:
+            statement = statement.where(Bottle.group_id == int(group_id))
+        if user_id:
+            statement = statement.where(Bottle.user_id == int(user_id))
+        if content:
+            statement = statement.filter(Bottle.content.ilike(f"%{content}%"))
+        statement = statement.order_by(Bottle.id).limit(size).offset((page - 1) * size)
         bottles = await session.scalars(
-                select(Bottle).where(Bottle.is_del == False).order_by(Bottle.id).limit(size).offset((page - 1) * size)
+                statement=statement
             )
         resp = []
         for bottle in bottles:
-            resp.append(bottle_model_to_resp(bottle=bottle, session=session))
+            resp.append(await bottle_model_to_resp(bottle=bottle, session=session))
         return resp
 
 async def get_comments(bottle_id: int, session: AsyncSession) -> List[CommentResp]:
@@ -48,24 +43,4 @@ async def get_comments(bottle_id: int, session: AsyncSession) -> List[CommentRes
     comments = await bottle_manager.get_comment_by_id(bottle_id=bottle_id, session=session, limit=3)
     for comment in comments:
          resp.append(CommentResp(id=comment.id,user_id=comment.user_id, user_name=comment.user_name,content=comment.content, time=comment.time.strftime("%Y-%m-%d, %H:%M:%S")))
-    return resp
-
-async def search(session:AsyncSession, bottle_id: Optional[int], group_id: Optional[int], user_id: Optional[int], content: Optional[str]) -> List[BottleResp]:
-    if bottle_id is None and group_id is None and user_id is None and content is None:
-        return None
-    from ..model import Bottle
-    from sqlalchemy import select
-    resp = []
-    statement = select(Bottle)
-    if bottle_id:
-        statement.where(Bottle.id == bottle_id)
-    if group_id:
-        statement.where(Bottle.group_id == group_id)
-    if user_id:
-        statement.where(Bottle.user_id == user_id)
-    if content:
-        statement.filter(Bottle.content.ilike(f"%{content}%"))
-    bottles = await session.scalars(statement=statement)
-    for bottle in bottles:
-        resp.append(bottle_model_to_resp(bottle=bottle, session=session))
     return resp

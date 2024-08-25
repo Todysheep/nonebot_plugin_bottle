@@ -1,12 +1,57 @@
 <template>
   <div>
-    <el-row :gutter="20">
+    <div style="margin: 20px">
+      <el-row :gutter="20" type="flex" justify="center">
+        <el-col :span="6">
+          <el-input
+            v-model="searchParams.bottle_id"
+            placeholder="漂流瓶ID"
+            clearable
+            style="width: 100%"
+          />
+        </el-col>
+        <el-col :span="6">
+          <el-input
+            v-model="searchParams.group_id"
+            placeholder="群号"
+            clearable
+            style="width: 100%"
+          />
+        </el-col>
+        <el-col :span="6">
+          <el-input
+            v-model="searchParams.user_id"
+            placeholder="用户号"
+            clearable
+            style="width: 100%"
+          />
+        </el-col>
+        <el-col :span="6">
+          <el-input
+            v-model="searchParams.content"
+            placeholder="内容（模糊）"
+            clearable
+            style="width: 100%"
+          />
+        </el-col>
+      </el-row>
+      <div style="text-align: center; margin-top: 10px">
+        <el-button type="primary" @click="resetSearch">重置</el-button>
+        <el-button type="primary" @click="searchBottles">查询</el-button>
+      </div>
+    </div>
+    <el-row :gutter="20" style="margin: 20px">
       <el-col v-for="bottle in bottles" :key="bottle.id" :span="6">
-        <el-card class="bottle-card" shadow="hover" @click.native="showDetails(bottle)">
+        <el-card
+          class="bottle-card"
+          shadow="hover"
+          @click.native="showDetails(bottle)"
+        >
           <template #header>
             <div class="header-container">
               <span class="bottle-id">{{ bottle.id }}</span>
-              <span class="group-name">{{ bottle.group_name }}({{ bottle.group_id }})<br><i class="el-icon-user" />{{ bottle.user_name }}({{ bottle.user_id }})</span>
+              <span class="group-name">{{ bottle.group_name }}({{ bottle.group_id }})<br /><iclass="el-icon-user"/>{{ bottle.user_name }}({{ bottle.user_id }})</span
+              >
             </div>
           </template>
           <div v-html="sanitizedContent(bottle.content)" />
@@ -40,11 +85,20 @@
     <el-dialog
       :visible.sync="dialogVisible"
       width="50%"
-      :title="selectedBottle ? 'Bottle ' + selectedBottle.id : ''"
+      :title="selectedBottle ? '漂流瓶 ' + selectedBottle.id : ''"
       custom-class="bottle-dialog"
     >
       <div v-if="selectedBottle">
-        <p><strong>群:</strong> {{ selectedBottle.group_name }}</p>
+        <p>
+          <strong>群:</strong> {{ selectedBottle.group_name }}({{
+            selectedBottle.group_id
+          }})
+        </p>
+        <p>
+          <strong>用户:</strong> {{ selectedBottle.user_name }}({{
+            selectedBottle.user_id
+          }})
+        </p>
         <div v-html="sanitizedContent(selectedBottle.content)" />
         <el-divider />
         <div v-for="comment in selectedBottle.comment" :key="comment.id">
@@ -65,8 +119,8 @@
 </template>
 
 <script>
-import { getBottles, getComments } from '@/api/bottle'
-import DOMPurify from 'dompurify'
+import { getBottles, getComments } from "@/api/bottle";
+import DOMPurify from "dompurify";
 
 export default {
   data() {
@@ -76,51 +130,70 @@ export default {
       pageSize: 10,
       currentPage: 1,
       dialogVisible: false,
-      selectedBottle: null
-    }
+      selectedBottle: null,
+      searchParams: {
+        bottle_id: "",
+        group_id: "",
+        user_id: "",
+        content: "",
+      },
+    };
   },
   mounted() {
-    this.fetchBottles()
+    this.fetchBottles();
   },
   methods: {
     sanitizedContent(content) {
-      return DOMPurify.sanitize(content)
+      return DOMPurify.sanitize(content);
     },
     async fetchBottles() {
       try {
         const response = await getBottles({
           page: this.currentPage - 1,
-          page_size: this.pageSize
-        })
-        this.bottles = response
+          page_size: this.pageSize,
+          ...this.searchParams,
+        });
+        this.bottles = response;
       } catch (error) {
-        console.error('Error fetching bottles:', error)
+        console.error("Error fetching bottles:", error);
       }
     },
     handlePageChange(page) {
-      this.currentPage = page
-      this.fetchBottles()
+      this.currentPage = page;
+      this.fetchBottles();
     },
     async showDetails(bottle) {
-      this.selectedBottle = bottle
-      this.dialogVisible = true
+      this.selectedBottle = bottle;
+      this.dialogVisible = true;
 
       try {
-        const comments = await getComments({ bottle_id: bottle.id })
-        this.selectedBottle.comment = comments
+        const comments = await getComments({ bottle_id: bottle.id });
+        this.selectedBottle.comment = comments;
       } catch (error) {
-        console.error('Error fetching comments:', error)
+        console.error("Error fetching comments:", error);
       }
-    }
-  }
-}
+    },
+    searchBottles() {
+      this.currentPage = 1;
+      this.fetchBottles();
+    },
+    resetSearch() {
+      this.currentPage = 1;
+      this.searchParams.bottle_id = "";
+      this.searchParams.group_id = "";
+      this.searchParams.user_id = "";
+      this.searchParams.content = "";
+      this.fetchBottles();
+    },
+  },
+};
 </script>
 
 <style lang="scss" scoped>
 .bottle-card {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   border-radius: 20px;
-  border-top: 4px solid #409EFF;
+  border-top: 4px solid #409eff;
   margin-bottom: 20px;
   transition: box-shadow 0.3s ease;
 }
@@ -166,9 +239,12 @@ export default {
 }
 
 .header-container .bottle-id {
-  font-size: 30px; /* Adjust size as needed */
-  color: #409EFF; /* Blue color */
-  font-weight: bold; /* Optional: make text bold */
+  font-size: 30px;
+  /* Adjust size as needed */
+  color: #409eff;
+  /* Blue color */
+  font-weight: bold;
+  /* Optional: make text bold */
 }
 </style>
 
