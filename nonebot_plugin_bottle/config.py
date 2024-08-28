@@ -39,3 +39,4 @@ rtrate = config.nonebot_plugin_bottle_rt_rate
 disable_comment_prompt = config.nonebot_plugin_bottle_disable_comment_prompt
 everyone_can_read = config.nonebot_plugin_bottle_everyone_can_read
 disable_forward = config.nonebot_plugin_bottle_disable_forward
+enable_approve = config.nonebot_plugin_bottle_enable_approve

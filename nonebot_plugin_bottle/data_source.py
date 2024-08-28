@@ -22,7 +22,7 @@ from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 
 from .model import Like, Bottle, Report, Comment
-from .config import api_key, secret_key, local_storage
+from .config import api_key, secret_key, local_storage, enable_approve
 from .exception import NotSupportMessage
 
 data_dir = Path("data/bottle")
@@ -226,6 +226,7 @@ class BottleManager:
                 content=content,
                 user_name=user_name,
                 group_name=group_name,
+                approved=not enable_approve
             )
             session.add(bottle)
             await session.commit()
@@ -243,7 +244,7 @@ class BottleManager:
         """
         bottle = await session.scalar(
             select(Bottle)
-            .where(Bottle.is_del == False)
+            .where(Bottle.is_del == False, Bottle.approved == True)
             .order_by(func.random())
             .limit(1)
         )
@@ -431,7 +432,7 @@ class BottleManager:
         """
         whereclause = [Bottle.user_id == user_id]
         if not include_del:
-            whereclause.append(Bottle.is_del == False)
+            whereclause.append(Bottle.is_del == False, Bottle.approved == True)
         return (
             await session.scalars(
                 select(Bottle).where(*whereclause).order_by(Bottle.id)

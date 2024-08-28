@@ -19,6 +19,7 @@
     "chokidar": "^3.6.0",
     "core-js": "3.25.5",
     "dompurify": "^3.1.6",
+    "echarts": "^5.5.1",
     "element-ui": "2.13.2",
     "js-cookie": "2.2.0",
     "normalize.css": "7.0.0",

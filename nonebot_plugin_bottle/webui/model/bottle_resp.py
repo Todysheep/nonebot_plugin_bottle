@@ -20,3 +20,7 @@ class Bottle(BaseModel):
     picked: str
     time: str
     comment: List[Comment]
+
+class ListBottleResp(BaseModel):
+    bottles: List[Bottle]
+    total: int

@@ -57,7 +57,6 @@ const actions = {
     commit('SET_NAME', '管理员')
   },
 
-  // remove token
   resetToken({ commit }) {
     return new Promise((resolve) => {
       removeToken() // must remove  token  first

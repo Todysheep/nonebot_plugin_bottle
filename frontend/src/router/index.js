@@ -51,7 +51,7 @@ export const constantRoutes = [
       path: 'dashboard',
       name: 'Dashboard',
       component: () => import('@/views/dashboard/index'),
-      meta: { title: 'Dashboard', icon: 'dashboard' }
+      meta: { title: '总览', icon: 'dashboard' }
     }]
   },
 
@@ -66,6 +66,20 @@ export const constantRoutes = [
         name: 'bottles',
         component: () => import('@/views/bottles/index'),
         meta: { title: '查看漂流瓶', icon: 'table' }
+      }
+    ]
+  },
+  {
+    path: '/approve',
+    component: Layout,
+    redirect: '/approve',
+    name: 'approve',
+    children: [
+      {
+        path: 'approve',
+        name: 'approve',
+        component: () => import('@/views/approve/index'),
+        meta: { title: '待审批', icon: 'table' }
       }
     ]
   },

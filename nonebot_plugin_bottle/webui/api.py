@@ -10,7 +10,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, UTC
 from pydantic import BaseModel
-from .model.bottle_resp import Bottle, Comment
+from .model.bottle_resp import Bottle, Comment, ListBottleResp
 from ..data_source import bottle_manager
 from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -73,33 +73,6 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
-
-@router.post("/refresh", response_model=dict)
-async def refresh_access_token(request: RefreshTokenRequest):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(request.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("scope") != "refresh_token":
-            raise credentials_exception
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = get_user(username=username)
-    if user is None:
-        raise credentials_exception
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"token": access_token, "token_type": "bearer"}
-
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -126,7 +99,7 @@ class LoginRequest(BaseModel):
     password: str
 
 @router.post("/token", response_model=dict)
-async def login_for_access_token(form_data: LoginRequest):
+async def _(form_data: LoginRequest):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -140,14 +113,51 @@ async def login_for_access_token(form_data: LoginRequest):
     )
     return {"token": access_token, "token_type": "bearer"}
 
-@router.get("/getBottles", response_model=list[Bottle])
-async def get_bottles(page: int = 0, page_size: int = 10, bottle_id: Optional[str] = None, group_id:Optional[str] = None, user_id:Optional[str] = None, content: Optional[str] = None,session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+@router.get("/getBottles", response_model=ListBottleResp)
+async def _(page: int = 0, page_size: int = 10, bottle_id: Optional[str] = None, group_id:Optional[str] = None, user_id:Optional[str] = None, content: Optional[str] = None,session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
     from .data_source import get_bottles_resp
     
     return await get_bottles_resp(page=page, size=page_size,bottle_id=bottle_id,group_id=group_id,user_id=user_id, content=content,session=session)
 
 @router.get("/getComments", response_model=list[Comment])
-async def get_bottles(bottle_id: int, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+async def _(bottle_id: int, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
     from .data_source import get_comments
     
     return await get_comments(bottle_id=bottle_id, session= session)
+
+@router.get("/getUnApprovedBottle", response_model=ListBottleResp)
+async def _(page: int = 0, page_size: int = 10, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import get_unapproved_bottles_resp
+    
+    return await get_unapproved_bottles_resp(page=page, size=page_size, session= session)
+
+class ApproveRespModel(BaseModel):
+    code: int
+    msg: str
+
+class ApproveReqModel(BaseModel):
+    bottle_id: int
+
+@router.post("/approve", response_model=ApproveRespModel)
+async def _(req: ApproveReqModel, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import approve_func
+
+    if await approve_func(bottle_id=req.bottle_id, is_approved=True, session=session):
+        return ApproveRespModel(code=0, msg="操作成功")
+    return ApproveRespModel(code=-1, msg="操作失败")
+
+@router.post("/reject", response_model=ApproveRespModel)
+async def _(req: ApproveReqModel, session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import approve_func
+
+    if await approve_func(bottle_id=req.bottle_id, is_approved=False, session=session):
+        return ApproveRespModel(code=0, msg="操作成功")
+    return ApproveRespModel(code=-1, msg="操作失败")
+
+from .model.resp import Statistic
+
+@router.get("/statistic", response_model=Statistic)
+async def _(session: AsyncSession = Depends(get_session), current_user: dict = Depends(get_current_active_user)):
+    from .data_source import get_bottle_statistic
+
+    return await get_bottle_statistic(session=session)

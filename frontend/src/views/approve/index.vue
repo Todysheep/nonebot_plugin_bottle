@@ -1,45 +1,5 @@
 <template>
   <div>
-    <div style="margin: 20px">
-      <el-row :gutter="20" type="flex" justify="center">
-        <el-col :span="6">
-          <el-input
-            v-model="searchParams.bottle_id"
-            placeholder="漂流瓶ID"
-            clearable
-            style="width: 100%"
-          />
-        </el-col>
-        <el-col :span="6">
-          <el-input
-            v-model="searchParams.group_id"
-            placeholder="群号"
-            clearable
-            style="width: 100%"
-          />
-        </el-col>
-        <el-col :span="6">
-          <el-input
-            v-model="searchParams.user_id"
-            placeholder="用户号"
-            clearable
-            style="width: 100%"
-          />
-        </el-col>
-        <el-col :span="6">
-          <el-input
-            v-model="searchParams.content"
-            placeholder="内容（模糊）"
-            clearable
-            style="width: 100%"
-          />
-        </el-col>
-      </el-row>
-      <div style="text-align: center; margin-top: 10px">
-        <el-button type="primary" @click="resetSearch">重置</el-button>
-        <el-button type="primary" @click="searchBottles">查询</el-button>
-      </div>
-    </div>
     <el-row :gutter="20" style="margin: 20px">
       <el-col v-for="bottle in bottles" :key="bottle.id" :span="6">
         <el-card
@@ -55,23 +15,19 @@
               >{{ bottle.group_name }}({{ bottle.group_id }})<br><i class="el-icon-user" />{{ bottle.user_name }}({{ bottle.user_id }})</span>
             </div>
           </template>
-          <div class="content-preview">
-            <div class="content-container" v-html="sanitizedContent(bottle.content)" />
+          <div v-html="sanitizedContent(bottle.content)" />
+          <div class="bottle-info-icon-container">
+            <el-tag> 👍 {{ bottle.like }} </el-tag>
+            <el-tag type="warning"> 🤚 {{ bottle.picked }}</el-tag>
+            <el-tag type="danger"> 🚩 {{ bottle.report }}</el-tag>
           </div>
-          <el-divider />
-          <div class="bottom-section">
-            <!-- <div v-for="comment in bottle.comment.slice(0, 3)" :key="comment.id">
-              <p>
-                <strong>{{ comment.user_name }}:</strong> {{ comment.content }}
-              </p>
-              <p style="font-size: 12px; color: gray">{{ comment.time }}</p>
-            </div>
-            <el-divider /> -->
-            <div class="bottle-info-icon-container">
-              <el-tag> 👍 {{ bottle.like }} </el-tag>
-              <el-tag type="warning"> 🤚 {{ bottle.picked }}</el-tag>
-              <el-tag type="danger"> 🚩 {{ bottle.report }}</el-tag>
-            </div>
+          <div style="text-align: center; margin-top: 10px">
+            <el-button type="success" @click.stop="approveBottle(bottle.id)">
+              通过
+            </el-button>
+            <el-button type="danger" @click.stop="rejectBottle(bottle.id)">
+              拒绝
+            </el-button>
           </div>
         </el-card>
       </el-col>
@@ -105,26 +61,27 @@
           }})
         </p>
         <div v-html="sanitizedContent(selectedBottle.content)" />
-        <el-divider />
-        <div v-for="comment in selectedBottle.comment" :key="comment.id">
-          <p>
-            <strong>{{ comment.user_name }}:</strong> {{ comment.content }}
-          </p>
-          <p style="font-size: 12px; color: gray">{{ comment.time }}</p>
-        </div>
-        <el-divider />
         <div class="bottle-info-icon-container">
           <el-tag> 👍 {{ selectedBottle.like }} </el-tag>
           <el-tag type="warning"> 🤚 {{ selectedBottle.picked }}</el-tag>
           <el-tag type="danger"> 🚩 {{ selectedBottle.report }}</el-tag>
         </div>
       </div>
+      <div style="text-align: center; margin-top: 20px">
+        <el-button type="success" @click="approveBottle(selectedBottle.id)">
+          通过
+        </el-button>
+        <el-button type="danger" @click="rejectBottle(selectedBottle.id)">
+          拒绝
+        </el-button>
+        <el-button @click="showNextBottle">下一条</el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { getBottles, getComments } from '@/api/bottle'
+import { getUnapprovedBottles, approve, reject } from '@/api/approve'
 import DOMPurify from 'dompurify'
 
 export default {
@@ -135,13 +92,7 @@ export default {
       pageSize: 10,
       currentPage: 1,
       dialogVisible: false,
-      selectedBottle: null,
-      searchParams: {
-        bottle_id: '',
-        group_id: '',
-        user_id: '',
-        content: ''
-      }
+      selectedBottle: null
     }
   },
   mounted() {
@@ -153,10 +104,9 @@ export default {
     },
     async fetchBottles() {
       try {
-        const response = await getBottles({
+        const response = await getUnapprovedBottles({
           page: this.currentPage - 1,
-          page_size: this.pageSize,
-          ...this.searchParams
+          page_size: this.pageSize
         })
         this.bottles = response.bottles
         this.total = response.total
@@ -168,28 +118,57 @@ export default {
       this.currentPage = page
       this.fetchBottles()
     },
-    async showDetails(bottle) {
+    showDetails(bottle) {
       this.selectedBottle = bottle
       this.dialogVisible = true
-
+    },
+    async approveBottle(bottle_id) {
       try {
-        const comments = await getComments({ bottle_id: bottle.id })
-        this.selectedBottle.comment = comments
+        const response = await approve(bottle_id)
+        if (response.code === 0) {
+          this.$message.success(response.msg)
+          this.removeBottle(bottle_id)
+          this.showNextBottle()
+        } else {
+          this.$message.error(response.msg)
+        }
       } catch (error) {
-        console.error('Error fetching comments:', error)
+        console.error('Error approving bottle:', error)
+        this.$message.error('操作失败')
       }
     },
-    searchBottles() {
-      this.currentPage = 1
-      this.fetchBottles()
+    async rejectBottle(bottle_id) {
+      try {
+        const response = await reject(bottle_id)
+        if (response.code === 0) {
+          this.$message.success(response.msg)
+          this.removeBottle(bottle_id)
+          this.showNextBottle()
+        } else {
+          this.$message.error(response.msg)
+        }
+      } catch (error) {
+        console.error('Error rejecting bottle:', error)
+        this.$message.error('操作失败')
+      }
     },
-    resetSearch() {
-      this.currentPage = 1
-      this.searchParams.bottle_id = ''
-      this.searchParams.group_id = ''
-      this.searchParams.user_id = ''
-      this.searchParams.content = ''
-      this.fetchBottles()
+    removeBottle(bottle_id) {
+      this.bottles = this.bottles.filter(bottle => bottle.id !== bottle_id)
+    },
+    showNextBottle() {
+      if (this.dialogVisible === false) {
+        return
+      }
+      const currentIndex = this.bottles.findIndex(
+        bottle => bottle.id === this.selectedBottle.id
+      )
+      const nextBottle =
+        this.bottles[currentIndex + 1] || this.bottles[0] || null
+      if (nextBottle) {
+        this.showDetails(nextBottle)
+      } else {
+        this.dialogVisible = false
+      }
     }
   }
 }
@@ -202,9 +181,6 @@ export default {
   border-top: 4px solid #409eff;
   margin-bottom: 20px;
   transition: box-shadow 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  height: 40vh;
 }
 
 .bottle-card:hover {
@@ -212,23 +188,23 @@ export default {
   cursor: pointer;
 }
 
-.content-preview {
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.content-container {
-  height: 18vh;
-  overflow: hidden;
-}
-
 .bottle-info-icon-container {
   display: flex;
   justify-content: center;
   width: 100%;
   gap: 20px;
-  margin-top: auto;
+}
+
+.bottle-dialog .el-dialog__header {
+  border-radius: 20px 20px 0 0;
+}
+
+.bottle-dialog .el-dialog__body {
+  border-radius: 0 0 20px 20px;
+}
+
+.bottle-dialog .el-dialog__wrapper {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .header-container {
@@ -249,24 +225,11 @@ export default {
 
 .header-container .bottle-id {
   font-size: 30px;
+  /* Adjust size as needed */
   color: #409eff;
+  /* Blue color */
   font-weight: bold;
-}
-
-.bottle-dialog .el-dialog__header {
-  border-radius: 20px 20px 0 0;
-}
-
-.bottle-dialog .el-dialog__body {
-  border-radius: 0 0 20px 20px;
-}
-
-.bottle-dialog .el-dialog__wrapper {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.bottom-section {
-  margin-top: auto;
+  /* Optional: make text bold */
 }
 </style>
 
