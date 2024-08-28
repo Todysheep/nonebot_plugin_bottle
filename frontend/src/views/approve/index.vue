@@ -225,11 +225,8 @@ export default {
 
 .header-container .bottle-id {
   font-size: 30px;
-  /* Adjust size as needed */
   color: #409eff;
-  /* Blue color */
   font-weight: bold;
-  /* Optional: make text bold */
 }
 </style>
 
