@@ -24,5 +24,10 @@ def _():
         frontend = Path(__file__).parent / "dist"
 
         get_app().mount("/bottle", SinglePageApplication(directory=frontend), name="web")
+
+        logger.info(f"漂流瓶管理页面：http://{get_driver().config.host}:{get_driver().config.port}/bottle")
+        from .api import admin_password, admin_user
+        logger.info(f"漂流瓶管理用户名：{admin_user}  密码：{admin_password}")
+
     except Exception as e:
         logger.error(f"bottleapi启动失败：{e}")

@@ -10,8 +10,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, UTC
 from pydantic import BaseModel
-from .model.bottle_resp import Bottle, Comment, ListBottleResp
-from ..data_source import bottle_manager
+from .model.bottle_resp import Comment, ListBottleResp
 from nonebot_plugin_datastore import get_session
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from ..data_source import cache_dir

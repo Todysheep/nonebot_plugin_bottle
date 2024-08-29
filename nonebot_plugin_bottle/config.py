@@ -28,6 +28,8 @@ class Config(BaseModel, extra=Extra.ignore):
     nonebot_plugin_bottle_admin_user: str = "admin"
     # webui 如果空就每次启动随机生成一个
     nonebot_plugin_bottle_admin_password: str = ""
+    # webui 是否发送待审批消息至管理员
+    nonebot_plugin_bottle_notice_admin: bool = True
 
 config: Config = Config.parse_obj(get_driver().config.dict())
 api_key = config.nonebot_plugin_bottle_api_key
@@ -40,3 +42,4 @@ disable_comment_prompt = config.nonebot_plugin_bottle_disable_comment_prompt
 everyone_can_read = config.nonebot_plugin_bottle_everyone_can_read
 disable_forward = config.nonebot_plugin_bottle_disable_forward
 enable_approve = config.nonebot_plugin_bottle_enable_approve
+approve_notice_admin = config.nonebot_plugin_bottle_notice_admin
