@@ -96,9 +96,15 @@
 | 漂流瓶被评论时将不提示 | nonebot_plugin_bottle_disable_comment_prompt | bool | False |
 | 任何情况下都可以查看漂流瓶（若False，则仅有评论或主人可查看） | nonebot_plugin_bottle_everyone_can_read | bool | False |
 | 关闭转发（若True，则所有转发消息都会逐条发出） | nonebot_plugin_bottle_disable_forward | bool | False |
-
+| 是否启用人工审批 | nonebot_plugin_bottle_enable_approve | bool | False |
+| webui用户名 | nonebot_plugin_bottle_admin_user | str | admin |
+| webui密码(若空，则每次启动时随机生成) | nonebot_plugin_bottle_admin_password | str |  |
+| 待审批漂流瓶是否通知管理员 | nonebot_plugin_bottle_notice_admin | bool | False |
 
 ## 更新日志
+- 2.1.0.0 [2024-08-29] [#62](https://github.com/Todysheep/nonebot_plugin_bottle/pull/62)
+    - 添加webui，可查看所有漂流瓶
+    - 添加审批，可通过webui审批漂流瓶
 - 2.0.0.4 [2023-12-13] [#62](https://github.com/Todysheep/nonebot_plugin_bottle/pull/62)
     - 图片防刷屏处理
     - 管理员现在可以使用`查看漂流瓶`来查看他人的漂流瓶

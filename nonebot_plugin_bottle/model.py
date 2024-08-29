@@ -51,7 +51,7 @@ class Bottle(Model):
     like: Mapped[int] = mapped_column(default=0)
     picked: Mapped[int] = mapped_column(default=0)
     is_del: Mapped[bool] = mapped_column(default=False)
+    approved: Mapped[bool] = mapped_column(default=True)
     time: Mapped[datetime] = mapped_column(default=datetime.now())
-
 
 Index(None, Bottle.user_id, Bottle.group_id)
