@@ -102,7 +102,7 @@
 | 待审批漂流瓶是否通知管理员 | nonebot_plugin_bottle_notice_admin | bool | False |
 
 ## 更新日志
-- 2.1.0.0 [2024-08-29] [#62](https://github.com/Todysheep/nonebot_plugin_bottle/pull/62)
+- 2.1.0.0 [2024-08-29] [#79](https://github.com/Todysheep/nonebot_plugin_bottle/pull/79)
     - 添加webui，可查看所有漂流瓶
     - 添加审批，可通过webui审批漂流瓶
 - 2.0.0.4 [2023-12-13] [#62](https://github.com/Todysheep/nonebot_plugin_bottle/pull/62)
