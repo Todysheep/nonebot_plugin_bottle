@@ -1,4 +1,4 @@
-from nonebot import get_driver, get_plugin_config
+from nonebot import get_driver
 from pydantic import Extra, BaseModel
 
 
