@@ -299,7 +299,7 @@ async def _(
             + f"你将编号No.{add_index}的漂流瓶以时速{random.randint(0,2**16)}km/h的速度扔出去，谁会捡到这个瓶子呢..."
             + ("（待审批）" if enable_approve else "" )
         )
-        if approve_notice_admin:
+        if enable_approve and approve_notice_admin:
             for user in bot.config.superusers:
                 await bot.send_private_msg(user_id=user, message=f"漂流瓶 {add_index} 等待审批，请前往web审批。")
     else:

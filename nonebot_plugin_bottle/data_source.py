@@ -81,7 +81,11 @@ async def deserialize_message(message: List[Dict[str, Any]]) -> Message:
     for seg in message:
         if seg["type"] == "cached_image":
             seg["type"] = "image"
-            seg["data"]["file"] = await file_to_b64(cache_dir / seg["data"]["file"])
+            try:
+                seg["data"]["file"] = await file_to_b64(cache_dir / seg["data"]["file"])
+            except FileNotFoundError:
+                seg["type"] = "text"
+                seg["data"] = {"text": "[图片]"}
     return parse_obj_as(Message, message)
 
 
