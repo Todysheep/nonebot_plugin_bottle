@@ -436,7 +436,7 @@ class BottleManager:
         """
         whereclause = [Bottle.user_id == user_id]
         if not include_del:
-            whereclause.append(Bottle.is_del == False, Bottle.approved == True)
+            whereclause += [Bottle.is_del == False, Bottle.approved == True]
         return (
             await session.scalars(
                 select(Bottle).where(*whereclause).order_by(Bottle.id)
