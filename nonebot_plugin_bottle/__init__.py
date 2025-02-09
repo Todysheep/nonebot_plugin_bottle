@@ -33,7 +33,8 @@ from .config import (
     everyone_can_read,
     disable_forward,
     enable_approve,
-    approve_notice_admin
+    approve_notice_admin,
+    allow_pending_approval_bottle_to_be_viewed
 )
 from .data_source import (
     ba,
@@ -126,7 +127,7 @@ async def get_bottle(
     )
     if not bottle:
         await matcher.finish("该漂流瓶不存在或已被删除！")
-    if not bottle.approved:
+    if not allow_pending_approval_bottle_to_be_viewed and not bottle.approved:
         await matcher.finish("该漂流瓶扔在审批中")
     return bottle
 
@@ -343,7 +344,7 @@ async def _(
     ba.add("cooldown", event.user_id)
     bottle_content = (await deserialize_message(bottle.content)).extract_plain_text().strip()
     bottle_message = (
-        f"【漂流瓶No.{bottle.id}】【+{bottle.like}/{bottle.picked}】\n来自【{group_name}】的“{user_name}”！\n"
+        f"【漂流瓶No.{bottle.id}{'（审批中）' if not bottle.approved else ''}】【+{bottle.like}/{bottle.picked}】\n来自【{group_name}】的“{user_name}”！\n"
         + f"时间：{bottle.time.strftime('%Y-%m-%d')}\n"
         + f"内容：\n"
         + await deserialize_message(bottle.content)

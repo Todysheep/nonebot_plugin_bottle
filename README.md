@@ -100,6 +100,7 @@
 | webui用户名 | nonebot_plugin_bottle_admin_user | str | admin |
 | webui密码(若空，则每次启动时随机生成) | nonebot_plugin_bottle_admin_password | str |  |
 | 待审批漂流瓶是否通知管理员 | nonebot_plugin_bottle_notice_admin | bool | False |
+| 待审批漂流瓶是否依旧可见，直到被拒绝 | nonebot_plugin_bottle_allow_pending_approval_to_be_viewed | bool | False |
 
 ## 更新日志
 - 2.1.0.0 [2024-08-29] [#79](https://github.com/Todysheep/nonebot_plugin_bottle/pull/79)

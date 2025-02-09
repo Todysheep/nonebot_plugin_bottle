@@ -22,7 +22,7 @@ from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
 
 from .model import Like, Bottle, Report, Comment
-from .config import api_key, secret_key, local_storage, enable_approve
+from .config import api_key, secret_key, local_storage, enable_approve, allow_pending_approval_bottle_to_be_viewed
 from .exception import NotSupportMessage
 
 data_dir = Path("data/bottle")
@@ -246,9 +246,12 @@ class BottleManager:
         Returns:
             Optional[Bottle]: 随机一个瓶子
         """
+        whereclause = [Bottle.is_del == False]
+        if not allow_pending_approval_bottle_to_be_viewed:
+            whereclause.append(Bottle.approved == True)
         bottle = await session.scalar(
             select(Bottle)
-            .where(Bottle.is_del == False, Bottle.approved == True)
+            .where(*whereclause)
             .order_by(func.random())
             .limit(1)
         )
@@ -436,7 +439,9 @@ class BottleManager:
         """
         whereclause = [Bottle.user_id == user_id]
         if not include_del:
-            whereclause += [Bottle.is_del == False, Bottle.approved == True]
+            whereclause.append(Bottle.is_del == False)
+        if not allow_pending_approval_bottle_to_be_viewed:
+            whereclause.append(Bottle.approved == True)
         return (
             await session.scalars(
                 select(Bottle).where(*whereclause).order_by(Bottle.id)

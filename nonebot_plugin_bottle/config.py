@@ -33,6 +33,8 @@ class Config(BaseModel):
     nonebot_plugin_bottle_admin_password: str = ""
     # webui 是否发送待审批消息至管理员
     nonebot_plugin_bottle_notice_admin: bool = True
+    # 是否允许待审批的漂流瓶被用户查看
+    nonebot_plugin_bottle_allow_pending_approval_to_be_viewed: bool = False
 
 config: Config = get_plugin_config(Config)
 api_key = config.nonebot_plugin_bottle_api_key
@@ -46,3 +48,4 @@ everyone_can_read = config.nonebot_plugin_bottle_everyone_can_read
 disable_forward = config.nonebot_plugin_bottle_disable_forward
 enable_approve = config.nonebot_plugin_bottle_enable_approve
 approve_notice_admin = config.nonebot_plugin_bottle_notice_admin
+allow_pending_approval_bottle_to_be_viewed = config.nonebot_plugin_bottle_allow_pending_approval_to_be_viewed
