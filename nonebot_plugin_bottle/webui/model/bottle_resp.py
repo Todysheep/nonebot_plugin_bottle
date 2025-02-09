@@ -15,9 +15,9 @@ class Bottle(BaseModel):
     user_name: str
     group_name: str
     content: str
-    report: str
-    like: str
-    picked: str
+    report: str | int
+    like: str | int
+    picked: str | int
     time: str
     comment: List[Comment]
 
