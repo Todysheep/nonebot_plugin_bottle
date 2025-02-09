@@ -1,8 +1,11 @@
-from nonebot import get_driver
-from pydantic import Extra, BaseModel
+from nonebot import get_plugin_config
+from pydantic import BaseModel, ConfigDict
 
+class Config(BaseModel):
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True
+    )
 
-class Config(BaseModel, extra=Extra.ignore):
     # 百度智能云文字审核API
     # 申请网址：https://cloud.baidu.com/doc/ANTIPORN/s/dkk6wyt3z
     nonebot_plugin_bottle_api_key: str = ""
@@ -31,7 +34,7 @@ class Config(BaseModel, extra=Extra.ignore):
     # webui 是否发送待审批消息至管理员
     nonebot_plugin_bottle_notice_admin: bool = True
 
-config: Config = Config.parse_obj(get_driver().config.dict())
+config: Config = get_plugin_config(Config)
 api_key = config.nonebot_plugin_bottle_api_key
 secret_key = config.nonebot_plugin_bottle_secret_key
 local_storage = config.nonebot_plugin_bottle_local_storage
