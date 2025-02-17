@@ -26,10 +26,9 @@ from .config import api_key, secret_key, local_storage, enable_approve, allow_pe
 from .exception import NotSupportMessage
 
 data_dir = Path("data/bottle")
-if local_storage:
-    cache_dir = data_dir / "cache"
-    cache_dir.mkdir(parents=True, exist_ok=True)
 data_dir.mkdir(parents=True, exist_ok=True)
+cache_dir = data_dir / "cache"
+cache_dir.mkdir(parents=True, exist_ok=True)
 
 
 # https://github.com/noneplugin/nonebot-plugin-chatrecorder
