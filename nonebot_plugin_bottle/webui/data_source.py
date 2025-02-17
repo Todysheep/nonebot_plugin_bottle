@@ -40,7 +40,7 @@ def bytes_to_base64(image_bytes: bytes) -> str:
 
 # 下载图像并转换为 Base64
 async def process_image(url: str):
-    if not url:
+    if not url or (not url.startswith("http")):
         return ""
     image_bytes = await download_image(url)
     if image_bytes is None:
