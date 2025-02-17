@@ -40,8 +40,8 @@ async def cache_file(msg: Message):
 
 
 async def cache_image_url(seg: MessageSegment, client: httpx.AsyncClient):
-    url = seg.data.get("url")
-    if not url:
+    url: str = seg.data.get("url") or seg.data.get("file")
+    if not url or (not url.startswith("http")):
         return
     
     seg.type = "cached_image"

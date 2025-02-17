@@ -51,7 +51,7 @@ async def process_image(url: str):
 
 async def bottle_model_to_resp(bottle: Bottle, session: AsyncSession) -> BottleResp:
     async def urlToB64(item: Dict[str, Any]):
-        item["data"]["_b64"] = await process_image(item["data"].get("url"))
+        item["data"]["_b64"] = await process_image(item["data"].get("url") or item["data"].get("file"))
     tasks = [item for item in bottle.content if item["type"] == 'image']
     if len(tasks) > 0:
         await asyncio.gather(*[urlToB64(item) for item in tasks])
