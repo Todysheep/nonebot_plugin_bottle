@@ -1,681 +1,229 @@
-try:
-    import ujson as json
-except:
-    import json
-
-import re
-import time
-import asyncio
-import hashlib
-from pathlib import Path
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, List, Dict, Optional
 
 import httpx
-import aiofiles
-from base64 import b64encode
+import base64
+import asyncio
+from nonebot import require
 from nonebot.log import logger
-from pydantic import parse_obj_as
-from sqlalchemy import func, text, select
+from urllib.parse import urlparse
+
+require("nonebot_plugin_datastore")
+from nonebot_plugin_datastore.db import get_engine
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from nonebot.adapters.onebot.v11 import Message, MessageSegment
-from nonebot_plugin_datastore.db import get_engine, post_db_init, create_session
+from .template import getHtml
 
-from .model import Like, Bottle, Report, Comment
-from .config import api_key, secret_key, local_storage, enable_approve, allow_pending_approval_bottle_to_be_viewed
-from .exception import NotSupportMessage
+from ..model import Bottle
 
-data_dir = Path("data/bottle")
-data_dir.mkdir(parents=True, exist_ok=True)
-cache_dir = data_dir / "cache"
-cache_dir.mkdir(parents=True, exist_ok=True)
+from .model.bottle_resp import Comment as CommentResp, Bottle as BottleResp, ListBottleResp
 
+from ..data_source import bottle_manager
 
-# https://github.com/noneplugin/nonebot-plugin-chatrecorder
-async def cache_file(msg: Message):
-    async with httpx.AsyncClient() as client:
-        await asyncio.gather(
-            *[cache_image_url(seg, client) for seg in msg if seg.type == "image"]
-        )
-
-
-async def cache_image_url(seg: MessageSegment, client: httpx.AsyncClient):
-    url = seg.data.get("url")
-    if not url:
-        return
-    
-    seg.type = "cached_image"
-    seg.data.clear()
+async def download_image(url: str) -> Optional[bytes]:
     try:
-        r = await client.get(url)
-        data = r.content
-    except httpx.TimeoutException:
-        return
+        async with httpx.AsyncClient() as client:
+            parsed_url = urlparse(url)
+            referer = f"{parsed_url.scheme}://{parsed_url.netloc}/"
+            headers = {"Referer": referer}
+            resp = await client.get(url, headers=headers, follow_redirects=True)
+            resp.raise_for_status()
+            
+            content = resp.content
+            if len(content) == 0:
+                return None        
+            return content
+    except Exception as e:
+        logger.warning(f"下载图片{url}失败：{e}")
+
+def bytes_to_base64(image_bytes: bytes) -> str:
+    return base64.b64encode(image_bytes).decode('utf-8')
+
+# 下载图像并转换为 Base64
+async def process_image(url: str):
+    if not url:
+        return ""
+    image_bytes = await download_image(url)
+    if image_bytes is None:
+        return None
     
-    if r.status_code != 200 or not data:
-        return
-    hash = hashlib.md5(data).hexdigest()
-    filename = f"{hash}.cache"
-    cache_file_path = cache_dir / filename
-    cache_files = [f.name for f in cache_dir.iterdir() if f.is_file()]
-    if filename not in cache_files:
-        async with aiofiles.open(cache_file_path, "wb") as f:
-            await f.write(data)
-    seg.data = {"file": filename}
+    base64_data = bytes_to_base64(image_bytes)
+    return f"data:image;base64,{base64_data}"
 
-async def file_to_b64(file: Path) -> str:
-    async with aiofiles.open(file, 'rb') as f:
-        return f"base64://{b64encode(await f.read()).decode()}"
-
-async def serialize_message(message: Message) -> List[Dict[str, Any]]:
-    for seg in message:
-        if seg.type not in ("text", "image"):
-            raise NotSupportMessage("漂流瓶只支持文字和图片~")
-    if local_storage:
-        await cache_file(message)
-    return [seg.__dict__ for seg in message]
-
-
-async def deserialize_message(message: List[Dict[str, Any]]) -> Message:
-    for seg in message:
-        if seg["type"] == "cached_image":
-            seg["type"] = "image"
-            try:
-                seg["data"]["file"] = await file_to_b64(cache_dir / seg["data"]["file"])
-            except FileNotFoundError:
-                seg["type"] = "text"
-                seg["data"] = {"text": "[图片]"}
-    return parse_obj_as(Message, message)
-
-
-async def get_content_preview(bottle: Bottle) -> str:
-    message_parts = await deserialize_message(bottle.content)
-    content_preview = ""
-    for part in message_parts:
-        if part.type == "text":
-            # 文字截取
-            text = part.data["text"]
-            content_preview += text[:20] + "..." if len(text) > 20 else text
-        elif part.type == "image":
-            # 图片处理
-            content_preview += "[图片]"
-    return content_preview
-
-
-def image_count(bottle: Bottle) -> int:
-    count = sum(1 for item in bottle.content if item["type"] == "image")
-    return count
-
-
-def whether_collapse(bottle: Bottle, bottle_str) -> bool:
-    max_return = 7
-    max_image = 2
-    max_len = 200
-    if (
-        bottle_str.count("\n") > max_return
-        or image_count(bottle) > max_image
-        or len(bottle_str) > max_len
-    ):
-        return True
-
-
-@post_db_init
-async def _():
-    old_data = data_dir / "data.json"
-    if old_data.exists():
-        logger.info("开始迁移旧漂流瓶数据")
-        with open(old_data, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        async with create_session() as session:
-            offset = (await session.scalar(func.max(Bottle.id))) or 0 + 1
-            for idx, i in enumerate(data):
-                # 旧版json兼容 - 评论
-                isOldVersion = False
-                commentnew = []
-                for index, value in enumerate(i["comment"]):
-                    if isinstance(value, str):
-                        isOldVersion = True
-                        commentnew.append([0, value])
-                if isOldVersion:
-                    i["comment"] = commentnew
-
-                # 旧版json兼容 - 时间time、举报者
-                i.setdefault("time", time.strftime("%Y-%m-%d %H:%M:%S"))
-                if i["time"] == "0000-00-00 00:00:00":
-                    i["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                i.setdefault("reported", [])
-                bottle = Bottle(
-                    user_id=i["user"],
-                    group_id=i["group"],
-                    user_name=i["user_name"],
-                    group_name=i["group_name"],
-                    content=await serialize_message(Message(i["text"])),
-                    report=i["report"],
-                    picked=i["picked"],
-                    is_del=i["del"],
-                    time=datetime.strptime(i["time"], "%Y-%m-%d %H:%M:%S"),
-                )
-                session.add(bottle)
-                for comment in i.get("comment", []):
-                    new_comment = Comment(
-                        user_id=comment[0],
-                        user_name=re.split("[:：]", comment[1])[0],
-                        content=re.split("[:：]", comment[1])[1],
-                        bottle_id=idx + offset,
-                    )
-                    session.add(new_comment)
-                for report in i.get("reported", []):
-                    new_report = Report(user_id=report, bottle_id=idx + offset)
-                    session.add(new_report)
-            await session.commit()
-            old_data.rename(data_dir / "data.json.old")
-            logger.info("旧漂流瓶数据迁移完成")
-
-
-class BottleManager:
-    def __init__(self) -> None:
-        pass
-
-    async def get_bottle(
-        self, index: int, session: AsyncSession, include_del: bool = False
-    ) -> Optional["Bottle"]:
-        """获取一个瓶子
-
-        Args:
-            index (int): 瓶子序号
-            session (AsyncSession): 会话
-            include_del (bool) : 是否包括被删除的瓶子
-        """
-        if not include_del:
-            return await session.scalar(
-                select(Bottle).where(Bottle.id == index, Bottle.is_del == False)
-            )
-        else:
-            return await session.scalar(select(Bottle).where(Bottle.id == index))
-        
-    async def add_bottle(
-        self,
-        user_id: int,
-        group_id: int,
-        content: List[Dict[str, Any]],
-        user_name: str,
-        group_name: str,
-        session: AsyncSession,
-    ) -> int:
-        """添加漂流瓶
-
-        Args:
-            user_id (int): 用户id
-            group_id (int): 群id
-            content (str): 内容
-            user_name (str): 用户名
-            group_name (str): 群名
-            session (AsyncSession): 会话
-
-        Returns:
-            int: 漂流瓶id
-        """
-        bottles = await session.scalars(
-            select(Bottle).where(Bottle.user_id == user_id, Bottle.group_id == group_id)
-        )
-        for bottle in bottles:
-            if bottle.content == content:
-                logger.warning("添加失败！")
-                return 0
-        else:
-            bottle = Bottle(
-                user_id=user_id,
-                group_id=group_id,
-                content=content,
-                user_name=user_name,
-                group_name=group_name,
-                approved=not enable_approve
-            )
-            session.add(bottle)
-            await session.commit()
-            await session.refresh(bottle)
-            return bottle.id
-
-    async def select(self, session: AsyncSession) -> Optional[Bottle]:
-        """随机选择一个漂流瓶
-
-        Args:
-            session (AsyncSession): 会话
-
-        Returns:
-            Optional[Bottle]: 随机一个瓶子
-        """
-        whereclause = [Bottle.is_del == False]
-        if not allow_pending_approval_bottle_to_be_viewed:
-            whereclause.append(Bottle.approved == True)
-        bottle = await session.scalar(
-            select(Bottle)
-            .where(*whereclause)
-            .order_by(func.random())
-            .limit(1)
-        )
-        if bottle:
-            bottle.picked += 1
-        return bottle
-
-    async def clear(self, session: AsyncSession) -> None:
-        """清空漂流瓶
-
-        Args:
-            session (AsyncSession): 会话
-        """
-        engine = get_engine()
-        for table in [
-            "nonebot_plugin_bottle_bottle",
-            "nonebot_plugin_bottle_comment",
-            "nonebot_plugin_bottle_report",
-        ]:
-            if engine.name == "sqlite":
-                await session.execute(text(f"DELETE FROM {table}"))
-            elif engine.name == "postgresql":
-                await session.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY"))
-            else:
-                await session.execute(text(f"TRUNCATE TABLE {table}"))
-
-    async def report(
-        self, bottle: Bottle, user_id: int, session: AsyncSession, times_max: int = 5
-    ) -> int:
-        """
-        举报漂流瓶
-        `index`: 漂流瓶编号
-        `timesMax`: 到达此数值自动处理
-
-        返回
-        0 举报失败
-        1 举报成功
-        2 举报成功并且已经自动处理
-        3 已经删除
-        """
-        if await session.scalar(
-            select(Report).where(
-                Report.user_id == user_id, Report.bottle_id == bottle.id
-            )
-        ):
-            return 0
-        if bottle.is_del:
-            return 3
-        bottle.report += 1
-        if bottle.report >= times_max:
-            bottle.is_del = True
-            return 2
-        else:
-            new_report = Report(user_id=user_id, bottle_id=bottle.id)
-            session.add(new_report)
-            return 1
-
-    async def get_report_info(
-        self, bottle: Bottle, session: AsyncSession
-    ) -> List[Report]:
-        """获取举报信息"""
-        report_info = await session.scalars(
-            select(Report).where(Report.bottle_id == bottle.id)
-        )
-        return report_info.all()
-
-    def comment(
-        self,
-        bottle: Bottle,
-        user_id: int,
-        user_name: str,
-        content: str,
-        session: AsyncSession,
-    ) -> None:
-        """评论漂流瓶
-
-        Args:
-            bottle (Bottle): 瓶子
-            user_id (int): 用户id
-            user_name (str): 用户名
-            content (str): 内容
-            session (AsyncSession): 会话
-        """
-        new_comment = Comment(
-            user_id=user_id, user_name=user_name, content=content, bottle_id=bottle.id
-        )
-        session.add(new_comment)
-
-    async def like_bottle(
-        self,
-        bottle: Bottle,
-        user_id: int,
-        session: AsyncSession,
-    ) -> int:
-        """点赞漂流瓶
-
-        Args:
-            bottle (Bottle): 瓶子
-            user_id (int): 用户id
-            session (AsyncSession): 会话
-
-        返回
-        0 点赞失败
-        1 点赞成功
-        """
-        if await session.scalar(
-            select(Like).where(Like.user_id == user_id, Like.bottle_id == bottle.id)
-        ):
-            return 0
-        bottle.like += 1
-        session.add(Like(user_id=user_id, bottle_id=bottle.id))
-        return 1
-
-    async def get_comment(
-        self,
-        bottle: Bottle,
-        session: AsyncSession,
-        limit: Optional[int] = 3,
-    ) -> Sequence[Comment]:
-        """获取评论
-
-        Args:
-            bottle (Bottle): 瓶子
-            session (AsyncSession): 会话
-            limit (Optional[int], optional): 评论个数. Defaults to 3.
-
-        Returns:
-            Sequence[Comment]: 评论们
-        """
-        return await self.get_comment_by_id(bottle_id=bottle.id, session=session, limit=limit)
-    
-    async def get_comment_by_id(
-        self,
-        bottle_id: int,
-        session: AsyncSession,
-        limit: Optional[int] = 3,
-    ) -> Sequence[Comment]:
-        """获取评论
-
-        Args:
-            bottle (Bottle): 瓶子
-            session (AsyncSession): 会话
-            limit (Optional[int], optional): 评论个数. Defaults to 3.
-
-        Returns:
-            Sequence[Comment]: 评论们
-        """
-        statement = select(Comment).where(Comment.bottle_id == bottle_id).order_by(Comment.time.desc())
-        if limit is not None:
-            statement.limit(limit)
-        return (
-            await session.scalars(
-                statement=statement
-            )
-        ).all()
-
-    async def del_comment(self, bottle: Bottle, user_id: int, session: AsyncSession):
-        """删除瓶子中用户id的所有评论
-
-        Args:
-            bottle (Bottle): 瓶子
-            user_id (int): 用户id
-            session (AsyncSession): 会话
-        """
-        comments = await session.scalars(
-            statement=select(Comment).where(
-                Comment.bottle_id == bottle.id, Comment.user_id == user_id
+async def bottle_model_to_resp(bottle: Bottle, session: AsyncSession) -> BottleResp:
+    async def urlToB64(item: Dict[str, Any]):
+        item["data"]["_b64"] = await process_image(item["data"].get("url"))
+    tasks = [item for item in bottle.content if item["type"] == 'image']
+    if len(tasks) > 0:
+        await asyncio.gather(*[urlToB64(item) for item in tasks])
+    bottleResp = BottleResp(
+        id=bottle.id,
+        user_id=bottle.user_id,
+        group_id=bottle.group_id,
+        user_name=bottle.user_name,
+        group_name=bottle.group_name,
+        content=getHtml(bottle.content),
+        report=bottle.report,
+        like=bottle.like,
+        picked=bottle.picked,
+        time=bottle.time.strftime("%Y-%m-%d, %H:%M:%S"),
+        comment=[],
+    )
+    comments = await bottle_manager.get_comment(bottle=bottle, session=session, limit=3)
+    for comment in comments:
+        bottleResp.comment.append(
+            CommentResp(
+                id=comment.id,
+                user_id=comment.user_id,
+                user_name=comment.user_name,
+                content=comment.content,
+                time=comment.time.strftime("%Y-%m-%d, %H:%M:%S"),
             )
         )
-        for comment in comments:
-            await session.delete(comment)
+    return bottleResp
 
-    async def list_bottles(
-        self, user_id: int, session: AsyncSession, include_del: bool = False
-    ) -> Sequence[Bottle]:
-        """获取用户扔出的所有漂流瓶
 
-        Args:
-            user_id (int): 用户ID
-            session (AsyncSession): 数据库会话
-            include_del (bool) : 是否包括被删除的瓶子
+async def get_bottles_resp(
+    page: int,
+    size: int,
+    bottle_id: Optional[str],
+    group_id: Optional[str],
+    user_id: Optional[str],
+    content: Optional[str],
+    session: AsyncSession,
+) -> ListBottleResp:
 
-        Returns:
-            Sequence[Bottle]: 用户扔出的所有漂流瓶
-        """
-        whereclause = [Bottle.user_id == user_id]
-        if not include_del:
-            whereclause.append(Bottle.is_del == False)
-        if not allow_pending_approval_bottle_to_be_viewed:
-            whereclause.append(Bottle.approved == True)
-        return (
-            await session.scalars(
-                select(Bottle).where(*whereclause).order_by(Bottle.id)
+    base_statement = select(Bottle).where(Bottle.is_del == False, Bottle.approved == True)
+    if bottle_id:
+        base_statement = base_statement.where(Bottle.id == int(bottle_id))
+    if group_id:
+        base_statement = base_statement.where(Bottle.group_id == int(group_id))
+    if user_id:
+        base_statement = base_statement.where(Bottle.user_id == int(user_id))
+    if content:
+        base_statement = base_statement.filter(Bottle.content.ilike(f"%{content}%"))
+
+    # 获取总数
+    total_statement = select(func.count()).select_from(base_statement.subquery())
+    total_count = await session.scalar(total_statement)
+
+    # 获取分页数据
+    statement = base_statement.order_by(Bottle.id).limit(size).offset(page * size)
+    bottles = await session.scalars(statement=statement)
+
+    resp = []
+    for bottle in bottles:
+        resp.append(await bottle_model_to_resp(bottle=bottle, session=session))
+
+    return ListBottleResp(bottles=resp, total = total_count)
+
+
+async def get_comments(bottle_id: int, session: AsyncSession) -> List[CommentResp]:
+    resp = []
+    comments = await bottle_manager.get_comment_by_id(
+        bottle_id=bottle_id, session=session, limit=3
+    )
+    for comment in comments:
+        resp.append(
+            CommentResp(
+                id=comment.id,
+                user_id=comment.user_id,
+                user_name=comment.user_name,
+                content=comment.content,
+                time=comment.time.strftime("%Y-%m-%d, %H:%M:%S"),
             )
-        ).all()
+        )
+    return resp
 
 
-bottle_manager = BottleManager()
+async def get_unapproved_bottles_resp(
+    page: int, size: int, session: AsyncSession
+) -> ListBottleResp:
+    base_statement = (
+        select(Bottle).where(Bottle.is_del == False).where(Bottle.approved == False)
+    )
+    # 获取总数
+    total_statement = select(func.count()).select_from(base_statement.subquery())
+    total_count = await session.scalar(total_statement)
+
+    # 获取分页数据
+    statement = base_statement.order_by(Bottle.id).limit(size).offset(page * size)
+    bottles = await session.scalars(statement=statement)
+    resp = []
+    for bottle in bottles:
+        resp.append(await bottle_model_to_resp(bottle=bottle, session=session))
+    return ListBottleResp(bottles=resp, total = total_count)
 
 
-class Audit(object):
-    bannedMessage = ""
-
-    def __init__(self) -> None:
-        self.data_path = Path("data/bottle/permissionsList.json").absolute()
-        self.data_dir = Path("data/bottle").absolute()
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.__data = {
-            "enableCooldown": True,
-            "cooldownTime": 30,
-            "bannedMessage": "",
-            "user": [],
-            "group": [],
-            "cooldown": {},
-            "disreportable": [],
-            "whiteUser": [],
-            "whiteGroup": [],
-        }
-        self.__load()
-
-    def __load(self):
-        try:
-            with self.data_path.open("r+", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception as e:
-            with self.data_path.open("w+", encoding="utf-8") as f:
-                json.dump(self.__data, f)
-            logger.success(f"在 {self.data_path} 成功创建漂流瓶黑名单数据库")
-        else:
-            self.__data.update(data)
-            self.bannedMessage = self.__data["bannedMessage"]
-
-    def __save(self) -> None:
-        with self.data_path.open("w+", encoding="utf-8") as f:
-            f.write(json.dumps(self.__data, ensure_ascii=False, indent=4))
-
-    def add(self, mode, num):
-        """
-        添加权限
-        `mode`:
-            `group`: 群号
-            `user`: QQ号
-            `cooldown`: 暂时冷却QQ号
-            `whiteUser`: 白名单QQ号
-            `whiteGroup`: 白名单群号
-        `num`: QQ/QQ群号
-        """
-        num = str(num)
-        try:
-            if mode != "cooldown" and num not in self.__data[mode]:
-                self.__data[mode].append(num)
-            elif (
-                not (self.checkWhite("whiteUser", num) or self.check("whiteGroup", num))
-                and self.__data["enableCooldown"]
-                and mode == "cooldown"
-            ):
-                self.__data["cooldown"][num] = (
-                    int(time.time()) + self.__data["cooldownTime"]
-                )
-            else:
-                return False
-            self.__save()
-            return True
-        except Exception as e:
-            logger.warning(e)
-            return False
-
-    def remove(self, mode, num):
-        """
-        移除黑名单
-        `mode`:
-            `group`: 群号
-            `user`: QQ号
-            `whiteUser`: 白名单QQ号
-            `whiteGroup`: 白名单群号
-        `num`: QQ/QQ群号
-        """
-        num = str(num)
-        try:
-            self.__data[mode].remove(num)
-            self.__save()
-            return True
-        except:
-            return False
-
-    def verify(self, user, group):
-        """
-        返回是否通过验证(白名单优先)
-        `user`: QQ号
-        `group`: 群号
-
-        返回：
-            `True`: 通过
-            `False`: 未通过
-        """
-        if not (
-            self.checkWhite("whiteUser", user) or self.checkWhite("whiteGroup", group)
-        ):
-            if (
-                self.check("user", user)
-                or self.check("group", group)
-                or self.check("cooldown", user)
-            ):
-                return False
-        return True
-
-    def verifyReport(self, qq):
-        """
-        检查是否有举报权限
-
-        返回：
-            `True`: 具有权限
-            `False`： 不具有权限
-        """
-        if str(qq) in self.__data["disreportable"]:
-            return False
-        else:
-            return True
-
-    def check(self, mode, num):
-        """
-        查找是否处于黑名单
-        `mode`:
-            `group`: 群号
-            `user`: QQ号
-            `cooldown`: 暂时冷却QQ号
-        `num`: QQ/QQ群号
-        """
-        num = str(num)
-        if mode in ["group", "user"]:
-            if num in self.__data[mode]:
-                return True
-        else:
-            if num in self.__data[mode]:
-                if time.time() <= self.__data[mode][num]:
-                    return True
+async def approve_func(
+    bottle_id: int, is_approved: bool, session: AsyncSession
+) -> bool:
+    statement = (
+        select(Bottle)
+        .where(Bottle.is_del == False)
+        .where(Bottle.approved == False)
+        .where(Bottle.id == bottle_id)
+    )
+    bottle = await session.scalar(statement=statement)
+    print(bottle)
+    if not bottle:
         return False
-
-    def checkWhite(self, mode, num: str):
-        """
-        检查是否为白名单
-        `mode`:
-            `whiteUser`: 白名单QQ号
-            `whiteGroup`: 白名单群号
-        `num`: QQ/QQ群号
-        """
-        num = str(num)
-        if mode == "whiteUser" and num in self.__data["whiteUser"]:
-            return True
-        elif mode == "whiteGroup" and num in self.__data["whiteGroup"]:
-            return True
-        else:
-            return False
-
-    def banreport(self, qq):
-        """
-        删除/恢复某人的举报权限
-        `qq`: QQ号
-        返回:
-            `0`: 成功解封
-            `1`: 成功封禁
-            `e`: 错误信息
-        """
-        try:
-            if qq not in self.__data["disreportable"]:
-                self.__data["disreportable"].append(qq)
-                self.__save()
-                return 1
-            else:
-                self.__data["disreportable"].remove(qq)
-                self.__save()
-                return 0
-        except Exception as e:
-            return e
+    if is_approved:
+        bottle.approved = True
+    else:
+        bottle.is_del = True
+    await session.commit()
+    return True
 
 
-ba = Audit()
-
-cursepath = Path("data/bottle/curse.json").absolute()
+from .model.resp import EachDay, Statistic
 
 
-async def text_audit(text: str, ak=api_key, sk=secret_key):
-    """
-    文本审核(百度智能云)
-    `text`: 待审核文本
-    `ak`: api_key
-    `sk`: secret_key
-    """
-    if (not api_key) or (not secret_key):
-        # 未配置key 进行简单违禁词审核
-        try:
-            async with aiofiles.open(cursepath, "r", encoding="utf-8") as f:
-                for i in json.loads(await f.read()):
-                    if i in text:
-                        return {
-                            "conclusion": "不合规",
-                            "data": [{"msg": f"触发违禁词 {i}"}],
-                        }
-                return "pass"
-        except:
-            if not cursepath.exists():
-                with cursepath.open("w+", encoding="utf-8") as f:
-                    f.write("[]")
-                return "pass"
-            else:
-                return "Error"
-    # access_token 获取
-    host = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ak}&client_secret={sk}"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(host)
-        if response:
-            access_token = response.json()["access_token"]
-        else:
-            # 未返回access_token 返回错误
-            return "Error"
+def get_date_format_function():
+    engine = get_engine()
+    # Check the database dialect
+    if "postgresql" in engine.dialect.name:
+        return func.to_char(Bottle.time, "YYYY-MM-DD")
+    elif "mysql" in engine.dialect.name:
+        return func.date_format(Bottle.time, "%Y-%m-%d")
+    elif "sqlite" in engine.dialect.name:
+        return func.strftime("%Y-%m-%d", Bottle.time)
+    else:
+        raise NotImplementedError("Unsupported database dialect")
 
-        request_url = (
-            "https://aip.baidubce.com/rest/2.0/solution/v1/text_censor/v2/user_defined"
+
+async def get_bottle_statistic(session: AsyncSession) -> Statistic:
+    from datetime import datetime
+    from datetime import timedelta
+
+    last_7_days = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=6)
+    daily_stats = await session.execute(
+        select(
+            get_date_format_function().label("date"),
+            func.count(Bottle.id).label("count"),
         )
-        params = {"text": text}
-        request_url = request_url + "?access_token=" + access_token
-        headers = {"content-type": "application/x-www-form-urlencoded"}
-        response = await client.post(request_url, data=params, headers=headers)
-        if response:
-            return response.json()
-        else:
-            # 调用审核API失败
-            return "Error"
+        .where(Bottle.time >= last_7_days)
+        .group_by("date")
+        .order_by("date")
+    )
+    aggregated_data = {row.date: row.count for row in daily_stats}
+    dates = [(last_7_days + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+
+    result = Statistic(
+        days=[EachDay(date=date, count=aggregated_data.get(date, 0)) for date in dates],
+        total=await session.scalar(func.count(Bottle.id)),
+        unapproved=await session.scalar(
+            select(func.count(Bottle.id)).where(
+                Bottle.is_del == False, Bottle.approved == False
+            )
+        ),
+        deleted=await session.scalar(
+            select(func.count(Bottle.id)).where(Bottle.is_del == True)
+        ),
+        avl=await session.scalar(
+            select(func.count(Bottle.id)).where(
+                Bottle.is_del == False, Bottle.approved == True
+            )
+        ),
+    )
+
+    return result
