@@ -1,6 +1,11 @@
-from typing import List, Optional
+from typing import Any, List, Dict, Optional
 
+import httpx
+import base64
+import asyncio
 from nonebot import require
+from nonebot.log import logger
+from urllib.parse import urlparse
 
 require("nonebot_plugin_datastore")
 from nonebot_plugin_datastore.db import get_engine
@@ -14,8 +19,42 @@ from .model.bottle_resp import Comment as CommentResp, Bottle as BottleResp, Lis
 
 from ..data_source import bottle_manager
 
+async def download_image(url: str) -> Optional[bytes]:
+    try:
+        async with httpx.AsyncClient() as client:
+            parsed_url = urlparse(url)
+            referer = f"{parsed_url.scheme}://{parsed_url.netloc}/"
+            headers = {"Referer": referer}
+            resp = await client.get(url, headers=headers, follow_redirects=True)
+            resp.raise_for_status()
+            
+            content = resp.content
+            if len(content) == 0:
+                return None        
+            return content
+    except Exception as e:
+        logger.warning(f"下载图片{url}失败：{e}")
+
+def bytes_to_base64(image_bytes: bytes) -> str:
+    return base64.b64encode(image_bytes).decode('utf-8')
+
+# 下载图像并转换为 Base64
+async def process_image(url: str):
+    if not url:
+        return ""
+    image_bytes = await download_image(url)
+    if image_bytes is None:
+        return None
+    
+    base64_data = bytes_to_base64(image_bytes)
+    return f"data:image;base64,{base64_data}"
 
 async def bottle_model_to_resp(bottle: Bottle, session: AsyncSession) -> BottleResp:
+    async def urlToB64(item: Dict[str, Any]):
+        item["data"]["_b64"] = await process_image(item["data"].get("url"))
+    tasks = [item for item in bottle.content if item["type"] == 'image']
+    if len(tasks) > 0:
+        await asyncio.gather(*[urlToB64(item) for item in tasks])
     bottleResp = BottleResp(
         id=bottle.id,
         user_id=bottle.user_id,

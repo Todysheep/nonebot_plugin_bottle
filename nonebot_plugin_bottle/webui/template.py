@@ -8,7 +8,11 @@ template_str = """
         {% elif item.type == 'cached_image' %}
             <img src="/bottle/images/{{ item.data.file }}" alt="Cached Image" class="bottle-cached-image">
         {% elif item.type == 'image' %}
-            <img src="{{ item.data.url }}" alt="Image" class="bottle-cached-image">
+            <img 
+                src="{{ item.data._b64 }}" 
+                alt="Image" 
+                class="bottle-cached-image"
+            >
         {% endif %}
     {% endfor %}
 </div>
